@@ -1,6 +1,6 @@
     
 
-top_tag20 = textread(fullfile(data_dir, 'tags_top20.txt'));
+top_tag20 = textread(fullfile(data_dir, 'tags_top20.txt'), '%s');
 cur_tag = top_tag20{k} ;
 
 eval_str = sprintf('hidlabel_%02d_%s_', k, cur_tag) ;

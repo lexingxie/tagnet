@@ -34,7 +34,7 @@ for k = 1 : 5
     tagcnt = full(sum(imglab,2));
     nlen = length(tagcnt);
     
-    k_idx = strcmp(cur_tag, tag_dim);
+    k_idx = find(strcmp(cur_tag, tag_dim));
     
     R = imglab;
     X = imgfeat';

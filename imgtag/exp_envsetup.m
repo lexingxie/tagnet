@@ -4,7 +4,8 @@ addpath ../commontools/
 addpath ../commontools/svm_wrap
 addpath ../toolbox/lbfgsb3.0_mex1.1
 addpath ../toolbox/libsvm-mat-3.0-1
-addpath ../toolbox/liblinear-1.92/matlab 
+%addpath ../toolbox/liblinear-1.92/matlab 
+% input not sparse, don't use this
 dbstop if error
 
 [~,hostn] = system('hostname');

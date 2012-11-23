@@ -102,8 +102,9 @@ iter = 0;
 options = optimset('GradObj', gradobj, 'MaxIter', fmin_iter, 'display', 'off'); %'DerivativeCheck', 'on', 
 %options = optimset('GradObj','off', 'MaxIter', 2, 'display', 'off');
 % --  option for LBFGS --
-opts.printEvery = 50;
+opts.printEvery = 5;
 opts.maxits = fmin_iter; 
+opts.maxTotalIts = 100; 
 
 while iter < max_iter && abs(delta)>1e-5
     

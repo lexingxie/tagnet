@@ -48,8 +48,8 @@ for k = 1 : 5
     end
     % remove training data for cur_tag @ k_idx
     R = R(:, setdiff(1:ntag, k_idx));
-    Yhid = Y(k_idx, :);
-    Y = Y(setdiff(1:ntag, k_idx), :);
+    Yhid = Y(:, k_idx);
+    Y = Y(:, setdiff(1:ntag, k_idx));
     
     fprintf('\n learning U, V without tag#%d "%s"\n', k_idx, cur_tag);
     
@@ -93,14 +93,15 @@ for k = 1 : 5
     Rtest = Xtest'*U'*V*Yhid;
     p_all = compute_perf(Rtest(:), 1.*full(imglab(:, k_idx)), 'store_raw_pr', 2);
     
-    ydist = sum((Yhid(ones(1, ntag-1), :) - Y).*2, 2) ;
+    ydist = sum((Yhid(:, ones(1, ntag-1)) - Y).*2, 1) ;
     [~, iy] = sort(ydist);
-    Ryn = sum(Xtest'*U'*V*Y(iy(1:K), :), 1);
+    Ryn = sum(Xtest'*U'*V*Y(:, iy(1:K)), 1);
     p_yn = compute_perf(Ryn(:), 1.*full(imglab(:, k_idx)), 'store_raw_pr', 2);
     
     
     fprintf(1, ' AP for "%s" is %0.4f, %d-nn in tagspace %0.4f \n', cur_tag, p_all.ap, K, p_yn.ap);
 
+    disp([p_all.ap, p_yn.ap])
     
     clear X Xtest R imgfeat imgid imglab
     save(sav_file)

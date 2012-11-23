@@ -1,11 +1,11 @@
 
+
+load(fullfile(data_dir, 'run-data', result_mat_name), 'U', 'V', 'Xtest', 'img_idx');
+
 eval_str = 'eval_tag1k_' ;
 
 exp_envsetup
 exp_setparams
-
-load(fullfile(data_dir, 'run-data', mat_name), 'U', 'V', 'Xtest');
-
 
 Rtest = Xtest'*U'*V*Y;
 
@@ -36,7 +36,7 @@ load( fullfile(data_dir, 'nuswide_1k_tagfeat.mat'), 'WG', 'col_label', 'row_labe
 %   row_label_BG      17034x1               2151226  cell
 %   row_label_WG      19975x1               2528202  cell      
 
-load(fullfile(data_dir, 'TrainTest_Label.mat'), 'train_tag_1k') ;
+load(fullfile(data_dir, 'TrainTest_Label.mat'), 'test_tag_1k') ;
 % >> whos('-file', fullfile(data_dir, 'TrainTest_Label.mat'))                                 
 % Name                    Size                 Bytes  Class             Attributes
 % 
@@ -52,14 +52,43 @@ load(fullfile(data_dir, 'TrainTest_Label.mat'), 'train_tag_1k') ;
 %   train_tag_1k       161789x1000            14971624  double
 %   sparse   
 
-[rvocab, iv, iw]  = intersect(vocab, row_label_WG);
-tag1k_feat = WG(:, iw)';
-[~, jv] = sort(vscore(iv), 'descend');
+ntag = length(col_label); 
 
-[cvocab, j1, j2] = intersect(tag1k, col_label);
+[rvocab, iv, iw]  = intersect(vocab, row_label_WG);
+%tag1k_feat = WG(:, iw)';
+
+[vs, jv] = sort(vscore, 'descend'); % take ~150 dimensions for now
+% this was how training tag feature were taken
+% tag_feat = tag_feat(:, iv(1: NUMV));
+tag1k_feat = zeros(ntag, NUMV);
+for i = 1 : NUMV
+    if any(jv(i)==iv) % this is in row_labe_WG
+        tag1k_feat(:, i) = WG(:, iw(jv(i)==iv) );
+    else
+        fprintf(1, 'not found: %s\n', vocab(jv(i)) );
+    end
+end
+
+
+% find top tags
+%[cvocab, j1, j2] = intersect(tag1k, col_label);
 tagcnt = sum(train_tag_1k, 2);
 [tagcnt, js] = sort(tagcnt, 'descend');
 
+%Xtest = imgfeat'; this is loaded from model file
+Y1k = log(tag1k_feat + 1)';
+
+p10 = zeros(1, ntag);
+for i = 1 : 10 %length(tag1k)
+    Ri = Xtest' * U' * V * Y1k(:, i);
+    tj = strmatch(tag1k{js(i)}, col_label, 'exact');
+    curlab = test_tag_1k(img_idx, js(i));
+    p_cur = compute_perf(Ri, 1.*full(curlab), 'store_raw_pr', 2, 'precision_depth', 10);
+    p10(tj) = p_cur.p_at_d;
+    % print score and filename for the top 10
+    fprintf(1, 'tag %s: p@10=%0.4f, ap=%0.4f, top 10 images\n', tag1k{js(i)}, p10(tj), p_cur.ap);
+    
+end
 
 clear Xtest
 

@@ -1,5 +1,5 @@
 
-for k = 1 : 5
+for k = 6 : 10 %1 : 5
 
     exp_envsetup
     

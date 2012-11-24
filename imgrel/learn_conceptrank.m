@@ -2,16 +2,16 @@
 function learn_conceptrank(varargin)
 
 [in_file, exp_home, db_subdir, exp_subdir, topK, ...
-    alph, gradobj, solver, bfgs_ttits] = process_options(varargin, ...
+    alph, gradobj, solver, bfgs_ttits, obs_type] = process_options(varargin, ...
     'in_file', 'n01680983', 'exp_home','/Users/xlx/Documents/proj/imgnet-flickr', ...
     'db_subdir', 'db2', 'exp_subdir', 'conceptrank-exp', 'topK', 15, ...
-    'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500) ;
+    'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500, 'obs_type', 'cn5-pr') ;
 
 
 [bigram, new_tagmap, new_tagcnt] = convert_syn_input(fullfile(exp_home, exp_subdir, in_file), ...
     'tagcnt_thresh', 5, 'numtag_thresh', 1200) ;
 
-[cn_known, cn_new] = conver_conceptnet(fullfile(exp_home, db_subdir, 'CN_graph.mat'), new_tagmap, 'logistic') ;
+[cn_known, cn_new, cn_all] = conver_conceptnet(fullfile(exp_home, db_subdir, 'CN_graph.mat'), new_tagmap, 'logistic') ;
 
 fprintf(1, '#tags %d, #bigrams %d\n', size(bigram,1), nnz(bigram));
 fprintf(1, '\trecall of bigrams in cn-known %d (%0.4f)\n', nnz(bigram & cn_known), nnz(bigram & cn_known)/nnz(cn_known));
@@ -22,17 +22,27 @@ fprintf(1, '\trecall of bigrams in cn-new %d (%0.4f)\n', nnz(bigram & cn_new), n
 %fprintf(1, 'recall of bg1 in cn-known %d (%0.4f)\n', nnz(bg1 & cn_known), nnz(bg1 & cn_known)/nnz(cn_known));
 %fprintf(1, 'recall of bg1 in cn-new %d (%0.4f)\n', nnz(bg1 & cn_new), nnz(bg1 & cn_new)/nnz(cn_new));
 
-[~] = eval_conceptrank(cn_new, bigram, cn_known, 'verbose', 1);
+[~, jnt] = sort(cell2mat(values(new_tagmap)) );
+tag_list = keys(new_tagmap);
+tag_list = tag_list(jnt);
 
-obsf = normalise(bigram);
-alphR_val = .001 ; %[1e-9, 1e-6];%, 0.001 0.005 .01];% .02 .05 .1 .25 .5 1 2 4 10] ;
+[~] = eval_conceptrank(cn_new, bigram, cn_known, 'verbose', 1);
+print_top_pairs(tril(bigram), tag_list, topK, cn_known, cn_all, 'bigram') ;
+
+if strcmp(obs_type, 'bigram')
+    obsf = normalise(bigram);
+else
+    obsf = compute_pagerank_mat(cn_all, alph);
+end
+
+alphR_val = 50/sum(bigram(:)>0) ; %[1e-9, 1e-6];%, 0.001 0.005 .01];% .02 .05 .1 .25 .5 1 2 4 10] ;
 rG = rand(size(cn_known)) ;
 
 for j = 1 %: length(alphR_val)
     aR = alphR_val(j) ;
     init_G = cn_known + rG ;
     init_G = init_G.*(bigram>0)  ;
-    fprintf(1, '\n %s alpha-R = %0.4f ... \n', datestr(now, 31), aR);
+    fprintf(1, '\n%s alpha-R = %0.4f ... \n', datestr(now, 31), aR);
     for jm = 20 
         tic
         GW = opt_wrap_conceptrank(cn_known, init_G, obsf, 'alphR', aR, 'alph', alph, ...
@@ -43,6 +53,8 @@ for j = 1 %: length(alphR_val)
         init_G = GW ;
     end    
 end
+
+print_top_pairs(tril(GW+GW'), tag_list, topK, cn_known, cn_all, 'ConceptRank') ;
 
 return
 
@@ -158,9 +170,9 @@ fprintf(1, ' most freq tags: \n');    fprintf(1, ' %s,', tk{jt(1:8)});
 fprintf(1, '\n least freq tags: \n');   fprintf(1, ' %s,', tk{jt(end-7:end)}); fprintf(1, '\n\n');
 
 %% ----- function to convert conceptnet graph into init-val + groundtruth for evaluation -----
-function [cn_known, cn_new] = conver_conceptnet(cn_graph_mat, tag_map, renorm_method)
+function [cn_known, cn_new, cn_all] = conver_conceptnet(cn_graph_mat, tag_map, renorm_method)
 
-load(cn_graph_mat, 'G4c', 'G5d', 'word_idmap' );
+load(cn_graph_mat, 'G4c', 'G5d', 'G5a', 'word_idmap' );
 %{
 
 load('/Users/xlx/Documents/proj/imgnet-flickr/db2/CN_graph.mat')
@@ -197,15 +209,17 @@ fprintf(1, ' reducing %d-word graph to %d tags, %d tags do not exist\n', word_id
 
 Gknown = sparse(nw, nw);
 Gnew = sparse(nw, nw);
+Gall = sparse(nw, nw);
 
 nr = length(G4c);
 assert(length(G5d)==nr, 'number of relatinos need to match');
 for r = 1 : nr
     Gknown = Gknown + G4c{r} ;
     Gnew = Gnew + G5d{r} ;
+    Gall = Gall + G5a{r} ;
 end
 
-fprintf(1, ' #relations in full matrix: %d in cn4-core, %d new in cn5\n', nnz(Gknown), nnz(Gnew));
+fprintf(1, ' #relations in full matrix: %d in cn5-all, %d in cn4-core, %d new in cn5\n', nnz(Gall), nnz(Gknown), nnz(Gnew));
 Gnew(Gknown>0) = 0;
 fprintf(1, ' # exclusive relations (cn5-new - cn4-core) %d \n', nnz(Gnew));
 
@@ -215,9 +229,11 @@ iw2 = wid_tid(wflag,2);
 
 cn_known(iw2, iw2) = Gknown(iw1, iw1);
 cn_new(iw2, iw2)   = Gnew(iw1, iw1);
+cn_all(iw2, iw2)   = Gall(iw1, iw1);
 
 cn_known = renorm_func(cn_known); 
 cn_new = renorm_func(cn_new); 
+cn_all = renorm_func(cn_all); 
 
-fprintf(1, ' #relations in reduced matrix: %d in cn4-core, %d new in cn5\n', nnz(cn_known), nnz(cn_new));
+fprintf(1, ' #relations in reduced matrix: %d in cn5-all, %d in cn4-core, %d new in cn5\n', nnz(cn_all), nnz(cn_known), nnz(cn_new));
 

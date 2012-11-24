@@ -1,6 +1,6 @@
-function print_top_pairs(G, tag_list, topK, known_subi, rnk_critera, reverse)
+function print_top_pairs(G, tag_list, topK, known_subi, new_subi, rnk_critera, reverse)
 
-if nargin < 6
+if nargin < 7
     reverse = false;
 end
 
@@ -14,7 +14,8 @@ n = size(G, 1);
 [gi, gj] = ind2sub([n,n], ig(1:topK));
 
 fprintf(1, ' Top %d concept pairs by %s: \n', topK, rnk_critera);
-c = known_subi;
+[c(:,1), c(:,2)] = ind2sub([n n], find(known_subi) );
+[d(:,1), d(:,2)] = ind2sub([n n], find(new_subi) );
 
 for i = 1 : topK
     score = gg(ig(i));
@@ -27,10 +28,13 @@ for i = 1 : topK
     ik = gi(i); jk = gj(i);
     if any(c(1,:)==ik & c(2,:)==jk) || any(c(1,:)==jk & c(2,:)==ik)
         statustr = '(konwn)' ;
+    elseif ~isempty(d) && ( any(d(1,:)==ik & d(2,:)==jk) || any(d(1,:)==jk & d(2,:)==ik) )
+        statustr = '(new-hit)' ;
     else
         statustr = '(-)' ;
     end
-    fprintf(1, '\t %0.4f\t %s %s %s\n', score, tag_list(gi(i),:), tag_list(gj(i), :), statustr) ;
+    %fprintf(1, '\t %0.4f\t %s %s %s\n', score, tag_list(gi(i),:), tag_list(gj(i), :), statustr) ;
+    fprintf(1, '\t %0.4f\t %s, %s %s\n', score, tag_list{gi(i)}, tag_list{gj(i)}, statustr) ;
 end
 
 disp('')

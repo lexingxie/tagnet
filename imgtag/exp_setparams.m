@@ -11,7 +11,7 @@ NUMV = 150 ;
 % # of hidden dimensions
 K = 5; %[3 5 7] ; %9:-2:5;
 alph = 100 ; %[1 10 100 1000 10000]; 
-max_iter = 5; %25
+max_iter = 10; %25
 
 neg_pos_ratio = 8;
 max_num_pos = 1e4; 

@@ -95,13 +95,14 @@ for k = 6 : 10 %1 : 5
     
     ydist = sum((Yhid(:, ones(1, ntag-1)) - Y).*2, 1) ;
     [~, iy] = sort(ydist);
-    Ryn = sum(Xtest'*U'*V*Y(:, iy(1:K)), 1);
+    Ryn = sum(Xtest'*U'*V*Y(:, iy(1:K)), 2);
     p_yn = compute_perf(Ryn(:), 1.*full(imglab(:, k_idx)), 'store_raw_pr', 2);
     
     
-    fprintf(1, ' AP for "%s" is %0.4f, %d-nn in tagspace %0.4f \n', cur_tag, p_all.ap, K, p_yn.ap);
-
-    disp([p_all.ap, p_yn.ap])
+    fprintf(1, 'concept "%s" - hidden-matchbox vs %d-nn in tagspace: \n', cur_tag, K);
+    fprintf(1, '\tAP:\t %0.4f\t%0.4f \n', [p_all.ap, p_yn.ap]);
+    fprintf(1, '\tF1:\t %0.4f\t%0.4f \n', [p_all.f1, p_yn.f1]);
+    fprintf(1, '\tAUC:\t %0.4f\t%0.4f \n', [p_all.auc, p_yn.auc]);
     
     clear X Xtest R imgfeat imgid imglab
     save(sav_file)

@@ -7,10 +7,12 @@ exp_setparams
 whos
 
 Ycache_mat = fullfile(data_dir, 'Y_CN5pr.mat');
+tag_feat_mat = fullfile(data_dir, 'tag_wn_feature.mat');
+load(tag_feat_mat, 'tag_feat', 'found_wn', 'vocab', 'vcnt', 'vscore', 'target_tags');
+    
 if strcmp(hostn(1:7), 'clavier') % macox
     %% load tag features, setup Y
-    tag_feat_mat = fullfile(data_dir, 'tag_wn_feature.mat');
-    load(tag_feat_mat, 'tag_feat', 'found_wn', 'vocab', 'vcnt', 'vscore', 'target_tags');
+    
     %   found_wn            81x1                     81  logical
     %   synset_map       13288x1                    112  containers.Map
     %   tag_feat            63x7323              765088  double            sparse

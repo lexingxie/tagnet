@@ -2,6 +2,17 @@
 function [Gout] = compute_pagerank_mat(Gin, alph, renorm_method)
 % compute personalized pagerank
 
+% normalize the input, not the output
+if nargin<3 || strcmpi(renorm_method, 'logistic')
+    renorm_func = inline( '.5*(1-exp(-x))./(1+exp(-x))' ); % logistic function
+elseif  strcmpi(renorm_method, 'log')
+    renorm_func = inline('log10(1+x)'); %logscaling
+else
+    % do nothing
+end
+
+Gin = renorm_func(Gin); 
+
 nw = size(Gin, 1);
 
 Gout = zeros(nw);
@@ -18,10 +29,3 @@ parfor c = 1 : nw
 end
 
 
-if nargin<3 || strcmpi(renorm_method, 'logistic')
-    renorm_func = inline( '.5*(1-exp(-x))./(1+exp(-x))' ); % logistic function
-else
-    renorm_func = inline('log10(1+x)'); %logscaling
-end
-
-Gout = renorm_func(Gout); 

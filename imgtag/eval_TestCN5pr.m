@@ -6,7 +6,8 @@ exp_setparams
 
 whos
 
-Ycache_mat = fullfile(data_dir, 'Y_CN5pr.mat');
+%Ycache_mat = fullfile(data_dir, 'Y_CN5pr.mat');
+Ycache_mat = fullfile(data_dir, 'Y_CN5pr_cat.mat');
 tag_feat_mat = fullfile(data_dir, 'tag_wn_feature.mat');
 load(tag_feat_mat, 'tag_feat', 'found_wn', 'vocab', 'vcnt', 'vscore', 'target_tags');
     
@@ -23,6 +24,7 @@ if strcmp(hostn(1:7), 'clavier') % macox
     [vs, iv] = sort(vscore, 'descend'); % take ~150 dimensions for now
     tag_feat = tag_feat(:, iv(1: NUMV));
     Y = log(tag_feat + 1)';
+    Y = Y/max(Y(:));
     
     pr_graph_mat = fullfile(data_dir, '../db2', 'CN5_pr.mat');
     %save(pr_graph_mat, 'G5', 'G5p', 'word_idmap', 'alph');
@@ -58,16 +60,18 @@ if strcmp(hostn(1:7), 'clavier') % macox
             gp_row_id(i) = word_idmap( gp_row{i}(1:end-1) );
         else
             fprintf(1, 'row key #%d not found "%s"!\n', i, gp_row{i});
-            gp_row_id(i) = 1;
+            gp_row_id(i) = -1;
             row_err = [row_err i];
         end
     end
+    gp_row_id = gp_row_id(gp_row_id>0);
     G5p = G5p + G5p' ;
     Y5p = G5p(gp_row_id, gp_col_id) ;
     Y5p(:, col_err) = 0;
     Y5p(row_err, :) = 0;
+    Y5p = Y5p/max(Y5p(:));
     
-    Y = Y5p ;
+    Y = [Y; Y5p] ;
     save(Ycache_mat, 'Y');
 else
     load(Ycache_mat, 'Y');

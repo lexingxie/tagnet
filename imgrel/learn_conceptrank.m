@@ -1,5 +1,5 @@
 
-function [GW, tag_list] = learn_conceptrank(varargin)
+function [GW, tag_list, cn_known, cn_all] = learn_conceptrank(varargin)
 
 [in_file, exp_home, db_subdir, exp_subdir, topK, ...
     alph, gradobj, solver, bfgs_ttits, obs_type, entry_type] = process_options(varargin, ...

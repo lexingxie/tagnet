@@ -1,5 +1,6 @@
 
 eval_str = 'eval_TestCN5pr_10k_' ;
+num_data_sample = 1e4;
 
 exp_envsetup
 exp_setparams
@@ -89,12 +90,20 @@ imglab = train_label(img_idx, found_wn) ;
 tag_dim = tag81(found_wn);
 ntag = length(tag_dim);
 
-% subselect some data
+
 tagcnt = full(sum(imglab,2));
 nlen = length(tagcnt);
 
-R = imglab;
-X = imgfeat';
+% subselect some data
+if ~isinf(num_data_sample)
+    idx = rand_idx(nlen, 1e4) ;
+else
+    idx = 1 : nlen;
+end
+
+R = imglab(idx, :);
+X = imgfeat(idx, :)';
+
 for j = 1 : size(imglab, 2)
     out_flag = sample_pos_neg(imglab(:,j), neg_pos_ratio, max_num_pos, max_num_neg);
     R(out_flag, j) = R(out_flag, j)-.5 ;

@@ -1,5 +1,5 @@
 
-eval_str = 'eval_Testall_' ;
+eval_str = 'eval_TestIndepY_' ;
 
 exp_envsetup
 exp_setparams
@@ -12,7 +12,8 @@ load(tag_feat_mat, 'tag_feat', 'found_wn', 'vocab', 'vcnt', 'vscore');
 
 [vs, iv] = sort(vscore, 'descend'); % take ~150 dimensions for now
 tag_feat = tag_feat(:, iv(1: NUMV));
-Y = log(tag_feat + 1)';
+%Y = log(tag_feat + 1)';
+Y = eye(size(tag_feat, 1));
 
 
 %% setup X and R
@@ -116,7 +117,7 @@ fprintf(1, ' MAP on allTest: \n\tmatchbox %0.4f, knn %0.4f, prior %0.4f\n',...
 disp(tag_dim)
 disp([ap_concept, prior_concept] )
 
-%clear imgfeat imgid imglab X* R
+clear imgfeat imgid imglab X* R
 
 save(sav_file) 
 diary off

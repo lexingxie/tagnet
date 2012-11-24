@@ -72,7 +72,8 @@ if strcmp(hostn(1:7), 'clavier') % macox
     Y5p(row_err, :) = 0;
     Y5p = Y5p/max(Y5p(:));
     
-    Y = [Y; Y5p] ;
+    %Y = [Y; Y5p] ;
+    Y = Y5p;
     save(Ycache_mat, 'Y');
 else
     load(Ycache_mat, 'Y');
@@ -105,7 +106,7 @@ R = imglab(idx, :);
 X = imgfeat(idx, :)';
 
 for j = 1 : size(imglab, 2)
-    out_flag = sample_pos_neg(imglab(:,j), neg_pos_ratio, max_num_pos, max_num_neg);
+    out_flag = sample_pos_neg(imglab(idx,j), neg_pos_ratio, max_num_pos, max_num_neg);
     R(out_flag, j) = R(out_flag, j)-.5 ;
     R(~out_flag, j) = 0;
     tmp = full(R(out_flag, j));

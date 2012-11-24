@@ -17,7 +17,7 @@ cdx = find(val_lb);
 n = size(init_g, 1);
 
 options = optimset('Algorithm', 'active-set','GradObj', gradobj, 'MaxIter', maxiter, 'display', 'off');%, 'DerivativeCheck', 'on');
-opts.printEvery = 1;
+opts.printEvery = 5;
 opts.maxits = maxiter;
 opts.maxTotalIts = bfgs_ttits ;
 

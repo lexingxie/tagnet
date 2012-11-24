@@ -1,11 +1,11 @@
 
-function learn_conceptrank(varargin)
+function [GW, tag_list] = learn_conceptrank(varargin)
 
 [in_file, exp_home, db_subdir, exp_subdir, topK, ...
-    alph, gradobj, solver, bfgs_ttits, obs_type] = process_options(varargin, ...
+    alph, gradobj, solver, bfgs_ttits, obs_type, entry_type] = process_options(varargin, ...
     'in_file', 'n01680983', 'exp_home','/Users/xlx/Documents/proj/imgnet-flickr', ...
     'db_subdir', 'db2', 'exp_subdir', 'conceptrank-exp', 'topK', 15, ...
-    'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500, 'obs_type', 'cn5-pr') ;
+    'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500, 'obs_type', 'cn5-pr', 'entry_type', 'bigram-only') ;
 
 
 [bigram, new_tagmap, new_tagcnt] = convert_syn_input(fullfile(exp_home, exp_subdir, in_file), ...
@@ -36,12 +36,14 @@ else
 end
 
 alphR_val = 50/sum(bigram(:)>0) ; %[1e-9, 1e-6];%, 0.001 0.005 .01];% .02 .05 .1 .25 .5 1 2 4 10] ;
-rG = .1*rand(size(cn_known)) ;
+rG = .05*rand(size(cn_known)) ;
 
 for j = 1 %: length(alphR_val)
     aR = alphR_val(j) ;
     init_G = cn_known + rG ;
-    init_G = init_G.*(bigram>0)  ;
+    if strcmp(entry_type, 'bigram-only')
+        init_G = init_G.*(bigram>0)  ;
+    end
     fprintf(1, '\n%s alpha-R = %0.4f ... \n', datestr(now, 31), aR);
     for jm = 20 
         tic
@@ -54,7 +56,8 @@ for j = 1 %: length(alphR_val)
     end    
 end
 
-print_top_pairs(tril(GW+GW'), tag_list, topK, cn_known, cn_all, 'ConceptRank') ;
+GW = GW+GW';
+print_top_pairs(tril(GW), tag_list, topK, cn_known, cn_all, 'ConceptRank') ;
 
 return
 

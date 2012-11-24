@@ -33,6 +33,9 @@ for c = 1 : nw
     hatw = alph*G5 + (1-alph)* e * v' ;
     [p, ~] = eigs(hatw', 1);
     G5p(c, :) = p / sum(p) ;
+    if mod(c, 100)==0
+        fprintf(1, '%s done computing %d / %d pagerank\n', datestr(now, 31), c, nw);
+    end
 end
 
 pr_graph_mat = fullfile(data_dir, '../db2', 'CN5_pr.mat');

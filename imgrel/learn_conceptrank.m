@@ -36,7 +36,7 @@ else
 end
 
 alphR_val = 50/sum(bigram(:)>0) ; %[1e-9, 1e-6];%, 0.001 0.005 .01];% .02 .05 .1 .25 .5 1 2 4 10] ;
-rG = rand(size(cn_known)) ;
+rG = .1*rand(size(cn_known)) ;
 
 for j = 1 %: length(alphR_val)
     aR = alphR_val(j) ;

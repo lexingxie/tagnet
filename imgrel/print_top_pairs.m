@@ -18,7 +18,7 @@ fprintf(1, ' Top %d concept pairs by %s: \n', topK, rnk_critera);
 [d(:,1), d(:,2)] = ind2sub([n n], find(new_subi) );
 
 for i = 1 : topK
-    score = gg(ig(i));
+    score = full( gg(ig(i)) );
     if ~reverse && score <= 0, 
         break; 
     elseif reverse && score <= 0

@@ -237,3 +237,22 @@ for i = 1 : num_vr
 end
 
 total_err = .5*total_err;
+
+
+%% smooth hinge loss function
+% http://mathoverflow.net/questions/51370/smooth-approximation-of-the-hinge-loss-function
+function [h, gh] = smooth_hinge(x)
+
+nx = length(x);
+
+if x <= 0 
+    h = .5 - x ;
+    gh = -1*ones(nx, 1);
+elseif x < 1
+    h = .5*(1 - x).*(1 - x);
+    gh = x - 1;
+else % x > 1
+    [h, gh] = deal(zeros(nx, 1));
+    %gh = 0;
+end
+

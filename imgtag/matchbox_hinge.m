@@ -4,9 +4,10 @@ function [U, V, predR] = matchbox_hinge(R, X, Y, alpha, varargin)
 %% optimize R ~ X'*U'*V*Y
 
 [k, indR, initU, initV, szR, fmin_iter, max_iter, ...
-    gradobj, DerivativeCheck, epsilon] = process_options(varargin, ...
+    gradobj, DerivativeCheck, epsilon, solver] = process_options(varargin, ...
     'k', 5, 'indR', [], 'initU', [], 'initV', [], 'szR', [], ...
-    'fmin_iter', 2, 'max_iter', 5, 'gradobj', 'on', 'DerivativeCheck', 'off', 'epsilon', 1e-5);
+    'fmin_iter', 2, 'max_iter', 5, 'gradobj', 'on', 'DerivativeCheck', 'off', ...
+    'epsilon', 1e-5, 'solver', 'fminunc');
 
 %% objective function
 % min. \sum_n s_hinge(y * x' UV Z) + .5*\alpha (|U| + |V|)
@@ -92,10 +93,18 @@ fprintf('%s scaling initU and initV by %f\n', datestr(now, 31), s);
 vec_u = initU(:);
 vec_v = initV(:);
 
+lb_ub_u = inf(size(vec_u));
+lb_ub_v = inf(size(vec_v)); % no LB or UB
+
 tmp = compute_obj(vec_u, vec_v, Rr, Xr, Yr, indRr, alpha, 'U'); 
 prev_val = tmp - .5*alpha*(vec_u'*vec_u + vec_v'*vec_v); % this is cheaper
 delta = prev_val + 1;
 fprintf('%s initial loss= sum_n s_hinge(y * x" U" V Z) =%f, on %d values\n', datestr(now, 31), prev_val, num_vr);
+
+% --  option for LBFGS --
+opts.printEvery = 5;
+opts.maxits = fmin_iter; 
+opts.maxTotalIts = 100; 
 
 iter = 0;
 options = optimset('GradObj', gradobj, 'MaxIter', fmin_iter, ...
@@ -105,12 +114,21 @@ while iter < max_iter && abs(delta)>epsilon
     
     fu = @(vu) compute_obj(vu, vec_v, Rr, Xr, Yr, indRr, alpha, 'U') ;
     cur_u = vec_u;
-    [vec_u, valU,exitflag,output,grad] = fminunc(fu, cur_u, options);
-    
+    if strcmpi(solver(1:5), 'lbfgs')
+        opts.x0 = cur_u ;
+        [vec_u, valU, info] = lbfgsb( fu, lb_ub_u, lb_ub_u, opts );
+    else
+        [vec_u, valU,exitflag,output,grad] = fminunc(fu, cur_u, options);
+    end
     
     fv = @(vv) compute_obj(vec_u, vv, Rr, Xr, Yr, indRr, alpha, 'V') ;
     cur_v = vec_v;
-    [vec_v, valV,exitflag,output,grad] = fminunc(fv, cur_v, options);
+    if strcmpi(solver(1:5), 'lbfgs')
+        opts.x0 = cur_v ;
+        [vec_v, valV, info] = lbfgsb( fv, lb_ub_v, lb_ub_v, opts );
+    else
+        [vec_v, valV,exitflag,output,grad] = fminunc(fv, cur_v, options);
+    end
     
     %err = compute_err(vec_u, vec_v, Rr, Xr, Yr, indRr) ; 
     err = valV - .5*alpha*(vec_u'*vec_u + vec_v'*vec_v); % this is cheaper

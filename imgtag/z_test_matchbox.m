@@ -16,4 +16,8 @@ V0 = randn(k, q);
 
 [U1, V1, predR1] = matchbox(R, X, Y, 1, 'initU', U0, 'initV', V0) ;
 
-[U2, V2, predR2] = matchbox_hinge(R, X, Y, 1, 'initU', U0, 'initV', V0, 'gradobj', 'off') ;
+disp('try hinge loss ');
+
+[U2, V2, predR2] = matchbox_hinge(R, X, Y, 1, 'initU', U0, 'initV', V0, 'gradobj', 'on', 'DerivativeCheck', 'on') ;
+
+[U3, V3, predR3] = matchbox_hinge(R, X, Y, 1, 'initU', U0, 'initV', V0, 'solver', 'lbgfs') ;

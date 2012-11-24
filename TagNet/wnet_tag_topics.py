@@ -359,6 +359,7 @@ def options_get_wnet_tag(argv):
     parser.add_option('', '--db_dir', dest='db_dir', default="db2", help='subdir storing various db')
     parser.add_option('', '--json_dir', dest='json_dir', default="json", help='subdir storing original json metadata')
     parser.add_option('-j', '--use_json', dest='use_json', type ='int', default=0, help='load tags from json or not')
+    parser.add_option('', '--individual_syn', dest='individual_syn', type ='int', default=0, help='collate tag for each input synset')
     
     parser.add_option("", '--db_wn', dest='db_wn', default="wordnet_tag.db", help='db about wordnet words and tags')
     parser.add_option("", '--db_dict', dest='db_dict', default="dict.db", help='dictionary')

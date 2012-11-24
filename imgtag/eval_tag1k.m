@@ -1,13 +1,15 @@
 
+exp_envsetup
 
+result_mat_name = 'eval_Testall_20121123T215757.mat';
 load(fullfile(data_dir, 'run-data', result_mat_name), 'U', 'V', 'Xtest', 'img_idx');
 
 eval_str = 'eval_tag1k_' ;
 
-exp_envsetup
+
 exp_setparams
 
-Rtest = Xtest'*U'*V*Y;
+%Rtest = Xtest'*U'*V*Y;
 
 %% load tag features, setup Y for tag1k
 
@@ -36,7 +38,7 @@ load( fullfile(data_dir, 'nuswide_1k_tagfeat.mat'), 'WG', 'col_label', 'row_labe
 %   row_label_BG      17034x1               2151226  cell
 %   row_label_WG      19975x1               2528202  cell      
 
-load(fullfile(data_dir, 'TrainTest_Label.mat'), 'test_tag_1k') ;
+load(fullfile(data_dir, 'TrainTest_Label.mat'), 'tag1k', 'tag81', 'train_tag_1k', 'test_tag_1k') ;
 % >> whos('-file', fullfile(data_dir, 'TrainTest_Label.mat'))                                 
 % Name                    Size                 Bytes  Class             Attributes
 % 
@@ -52,6 +54,12 @@ load(fullfile(data_dir, 'TrainTest_Label.mat'), 'test_tag_1k') ;
 %   train_tag_1k       161789x1000            14971624  double
 %   sparse   
 
+
+load(fullfile(data_dir, 'Test_feat_objbank.mat'), 'imgid');
+img_idx = cell2mat(values(test_idx_map, imgid));
+test_img_name = imgid';
+clear imgid
+
 ntag = length(col_label); 
 
 [rvocab, iv, iw]  = intersect(vocab, row_label_WG);
@@ -63,34 +71,60 @@ ntag = length(col_label);
 tag1k_feat = zeros(ntag, NUMV);
 for i = 1 : NUMV
     if any(jv(i)==iv) % this is in row_labe_WG
-        tag1k_feat(:, i) = WG(:, iw(jv(i)==iv) );
+        tag1k_feat(:, i) = WG(iw(jv(i)==iv), : )';
     else
-        fprintf(1, 'not found: %s\n', vocab(jv(i)) );
+        fprintf(1, 'not found: %s\n', vocab{jv(i)} );
     end
 end
 
 
 % find top tags
 %[cvocab, j1, j2] = intersect(tag1k, col_label);
-tagcnt = sum(train_tag_1k, 2);
+tagcnt = sum(train_tag_1k, 1);
 [tagcnt, js] = sort(tagcnt, 'descend');
+
+for i=1:81, tag81p{i}=[tag81{i}, 's']; end
+for i=1:81, tag81s{i}=[tag81{i}(1:end-1)]; end
+tag1k_reduced = setdiff(tag1k, [tag81; tag81p'; tag81s']);
+clear tag81*
 
 %Xtest = imgfeat'; this is loaded from model file
 Y1k = log(tag1k_feat + 1)';
+test_tag_col = test_tag_1k(img_idx, :);
 
 p10 = zeros(1, ntag);
-for i = 1 : 10 %length(tag1k)
-    Ri = Xtest' * U' * V * Y1k(:, i);
-    tj = strmatch(tag1k{js(i)}, col_label, 'exact');
-    curlab = test_tag_1k(img_idx, js(i));
+tcnt = 0;
+for i = 1 : 150 % 1 : 10 %length(tag1k)
+    cur_tag = tag1k{js(i)};
+    tt = strmatch(cur_tag, tag1k_reduced, 'exact');
+    tj = strmatch(cur_tag, col_label, 'exact');
+    if isempty(tt) || isempty(tj)
+        continue;
+    else
+        tcnt = tcnt + 1;
+    end
+    Ri = Xtest' * U' * V * Y1k(:, tj);    
+    curlab = test_tag_col(:, js(i));
     p_cur = compute_perf(Ri, 1.*full(curlab), 'store_raw_pr', 2, 'precision_depth', 10);
     p10(tj) = p_cur.p_at_d;
     % print score and filename for the top 10
-    fprintf(1, 'tag %s: p@10=%0.4f, ap=%0.4f, top 10 images\n', tag1k{js(i)}, p10(tj), p_cur.ap);
-    
+    %fprintf(1, 'tag#%d "%s": \t p@10=%0.4f \t ap=%0.4f \t auc=%0.4f\n', tcnt, tag1k{js(i)}, p10(tj), p_cur.ap, p_cur.auc);
+    fprintf(1, '%0.4f\t %0.4f\t %0.4f\t %s\n', p_cur.p_at_d, p_cur.ap, p_cur.auc, cur_tag);
+    if 0
+        [~, rj] = sort(Ri, 'descend');
+        %disp ( test_img_name(rj(1:10)) )
+        % cp $NUSIMGDIR/food/0531_29900246.jpg test/01_food_0531_29900246.jpg
+        fprintf(1, '\nmkdir %s\n', cur_tag);
+        for j = 1 : 10
+            src_name = test_img_name{rj(j)} ;
+            fprintf(1, 'cp $NUS_IMG_DIR/%s %s/%02d_%s\n', src_name, tag1k{js(i)}, j, strrep(src_name, '/', '_') );
+        end
+        disp(' ');
+    end
 end
 
 clear Xtest
 
-save(sav_file) 
+
+save(sav_file, 'Xtest', 'U', 'V', 'Y1k', 'col_label', 'tag1k', 'tag81', 'test_tag_col', 'test_img_name') 
 diary off

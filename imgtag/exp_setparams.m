@@ -17,7 +17,7 @@ neg_pos_ratio = 8;
 max_num_pos = 1e4; 
 max_num_neg = 2e4;
 
-if ~exist(log_timestamp, 'var')
+if ~exist('log_timestamp', 'var')
     sav_dir = fullfile(data_dir, 'run-data');
     log_timestamp = datestr(now, 30);
     sav_file = fullfile(sav_dir, [eval_str, log_timestamp '.mat']);

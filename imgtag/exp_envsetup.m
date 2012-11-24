@@ -14,6 +14,8 @@ if strcmp(hostn, 'kinross') || strcmp(hostn, 'koves')
     data_dir = '/home/users/xlx/vault-xlx/imgnet-flickr/nuswide2';
 elseif strcmp(hostn, 'cantabile')
     data_dir = '/home/xlx/data/imgnet-flickr/nuswide2';
+elseif strcmp(hostn, 'xuming-UbuntuBox');
+    data_dir = '/home/xlx/proj/imgnet-flickr/nuswide2';
 else % mac os
     data_dir = '/Users/xlx/Documents/proj/imgnet-flickr/nuswide';
 end

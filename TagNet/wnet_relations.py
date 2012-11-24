@@ -235,7 +235,7 @@ def analyze_tag_pairs(argv):
         mi_list = [] 
         freq_list = []
         rel_list = []
-        rel_flag = []
+        rel_flag = []        
         for u, v, c in bg_tuples:
             iu = tag_list.index(u)
             iv = tag_list.index(v)
@@ -283,12 +283,23 @@ def analyze_tag_pairs(argv):
             
         wn_bgf.close()
         
+        #print bg_tuples
+        bigram_list = []
+        for u, v, c in bg_tuples:
+            iu = tag_list.index(u)
+            iv = tag_list.index(v)
+            bigram_list += [iu, iv, c]
+            
         wn_out_mat = os.path.join(opts.data_home, opts.wnet_out_dir, wn+".mat")
         tcnt = tcnt_mat[:icnt, :]
+        tag_num = map(lambda t: tag_cnt[t], tag_list)
         #mlab.save(wn_out_mat, 'img_list', 'tag_list', 'tcnt_mat')
-        data = {'usr_list': ulist, 'tag_list': tag_list, 'tcnt':tcnt, 
+        data = {'usr_list': ulist, 'tag_list': tag_list, 'tcnt': tcnt, 'tag_cnt':tag_num, 
+                'bigram_list':bigram_list,
                 'other_words':other_words, 'hier_words':hi_words, 'hier_depth':hi_depth, 
                 'mi': mi_list, 'freq': freq_list, 'csubnet':rel_list}
+        
+        #data = {'wnet_list': wnet_list, 'usr_list': ulist, 'tag_list': tag_list, 'tag_cnt':tag_num, 'bigram_list': bigram_list}
         io.savemat(wn_out_mat, data)
         
         tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')

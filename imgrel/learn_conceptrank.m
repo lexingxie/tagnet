@@ -45,7 +45,7 @@ rG = .05*rand(size(cn4)) ;
 
 for j = 1 %: length(alphR_val)
     aR = alphR_val(j) ;
-    if strcmp('init_type', 'cn4')
+    if strcmp(init_type, 'cn4')
         init_G = cn4 + rG ;
         lower_bound = cn4; 
     else

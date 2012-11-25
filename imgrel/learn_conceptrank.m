@@ -63,13 +63,13 @@ for j = 1 %: length(alphR_val)
             'maxiter', jm, 'GradObj', gradobj, 'solver', solver, 'bfgs_ttits', bfgs_ttits);
         % bfgs_ttits is the max-total-its in LBFGS, default 5000
         toc
-        [~] = eval_conceptrank(cn_new, GW+GW', cn_known, 'verbose', 1, 'tau', 1e-6);
+        [~] = eval_conceptrank(cn_new, GW+GW', cn4, 'verbose', 1, 'tau', 1e-6);
         init_G = GW ;
     end    
 end
 
 GW = GW+GW';
-print_top_pairs(tril(GW), tag_list, topK, cn_known, cn5, 'ConceptRank') ;
+print_top_pairs(tril(GW), tag_list, topK, cn4, cn5, 'ConceptRank') ;
 
 return
 

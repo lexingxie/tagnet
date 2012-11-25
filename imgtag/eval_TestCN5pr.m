@@ -17,6 +17,8 @@ num_data_sample = inf;
 
 whos
 
+disp(eval_str)
+
 if use_norm
     Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
 else

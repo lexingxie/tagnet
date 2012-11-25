@@ -12,9 +12,12 @@ whos
 
 %Ycache_mat = fullfile(data_dir, 'Y_CN5pr.mat');
 Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
-load(Ycache_mat, 'Y', 'Y5p');
+load(Ycache_mat, 'Y', 'Y5p', 'Yadd');
 
+% cat features
 Y = [Y(1:NUMV, :); Y5p(1:NUMV, :)] ;
+% add features
+%Y = Yadd(1:NUMV, :); 
 
 exp_setupTraining
 

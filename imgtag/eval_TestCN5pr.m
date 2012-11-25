@@ -22,7 +22,7 @@ disp(eval_str)
 if use_norm
     Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
 else
-    Ycache_mat = fullfile(data_dir, 'Y_CN5pr.mat');
+    Ycache_mat = fullfile(data_dir, 'Y_CN5_pr.mat');
 end
 load(Ycache_mat, 'Y', 'Y5p', 'Yadd');
 

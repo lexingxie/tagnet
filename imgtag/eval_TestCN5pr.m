@@ -15,9 +15,9 @@ Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
 load(Ycache_mat, 'Y', 'Y5p', 'Yadd');
 
 % cat features
-Y = [Y(1:NUMV, :); Y5p(1:NUMV, :)] ;
+%Y = [Y(1:NUMV, :); Y5p(1:NUMV, :)] ;
 % add features
-%Y = Yadd(1:NUMV, :); 
+Y = Yadd(1:NUMV, :); 
 
 echo off
 exp_setupTraining

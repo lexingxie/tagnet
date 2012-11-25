@@ -9,7 +9,7 @@ switch sort_y
         eval_str = 'eval_Test_Yscore_' ;
     case 'rand'
         eval_str = 'eval_Test_Yrand_' ;
-    otherwise:
+    otherwise
         fprintf(1, ' dunno know how to select Y, quit');
         return;
 end
@@ -34,7 +34,7 @@ switch sort_y
         [~, iv] = sort(vscore, 'descend'); % take ~150 dimensions for now
     case 'rand'
         [~, iv] = sort(rand(1,length(vscore)), 'descend'); % random
-    otherwise:
+    otherwise
         fprintf(1, ' dunno know how to select Y, quit');
         return;
 end

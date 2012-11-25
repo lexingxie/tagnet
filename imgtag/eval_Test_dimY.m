@@ -29,7 +29,7 @@ load(tag_feat_mat, 'tag_feat', 'found_wn', 'vocab', 'vcnt', 'vscore', 'target_ta
 
 switch sort_y
     case 'vcnt'
-        [~, iv] = sort(vscore, 'vcnt'); % take the most frequent
+        [~, iv] = sort(vcnt, 'descend'); % take the most frequent
     case 'vscore'
         [~, iv] = sort(vscore, 'descend'); % take ~150 dimensions for now
     case 'rand'

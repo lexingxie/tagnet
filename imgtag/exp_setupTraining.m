@@ -20,7 +20,7 @@ nlen = length(tagcnt);
 
 % subselect some data
 if ~isinf(num_data_sample)
-    idx = rand_idx(nlen, 1e4) ;
+    idx = rand_idx(nlen, num_data_sample) ;
 else
     idx = 1 : nlen;
 end

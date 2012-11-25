@@ -1,5 +1,6 @@
 
 %eval_str = 'eval_TestCN5pr_10k_' ;
+clear
 
 exp_envsetup
 %exp_setparams
@@ -68,15 +69,22 @@ if strcmp(hostn(1:7), 'clavier') % macox
             row_err = [row_err i];
         end
     end
-    gp_row_id = gp_row_id(gp_row_id>0);
+    gp_rr_id = gp_row_id(gp_row_id>0);
     
     G5p = G5p + G5p' ;
-    Y5p = G5p(gp_row_id, gp_col_id) ;
+    
+    gp_row_id(gp_row_id<0) = 1;
+    Yadd = G5p(gp_row_id, gp_col_id);
+    
+    Yadd(:, col_err) = 0;
+    Yadd = Yadd/max(Yadd(:)) + Y ;
+    Yadd(row_err, :) = Y(row_err, :);
+    
+    Y5p = G5p(gp_rr_id, gp_col_id) ;
     Y5p(:, col_err) = 0;
-    Y5p(row_err, :) = 0;
     Y5p = Y5p/max(Y5p(:));
     
-    save(Ycache_mat, 'Y5p');
+    save(Ycache_mat, 'Y5p', 'Y', 'Yadd');
 else
     fprintf(1, 'quit: do not have input data on this machine!\n');
 end

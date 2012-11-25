@@ -5,53 +5,61 @@ function [GW, tag_list, cn_known, cn_all] = learn_conceptrank(varargin)
 % entry_type controls what the variables are: "bigram-only", or all
 
 [in_file, exp_home, db_subdir, exp_subdir, topK, ...
-    alph, gradobj, solver, bfgs_ttits, obs_type, entry_type] = process_options(varargin, ...
+    alph, gradobj, solver, bfgs_ttits, obs_type, init_type, entry_type] = process_options(varargin, ...
     'in_file', 'n01680983', 'exp_home','/Users/xlx/Documents/proj/imgnet-flickr', ...
     'db_subdir', 'db2', 'exp_subdir', 'conceptrank-exp', 'topK', 15, ...
-    'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500, 'obs_type', 'cn5-pr', 'entry_type', 'bigram-only') ;
+    'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500, ...
+    'obs_type', 'cn5-pr', 'init_type', 'cn4', 'entry_type', 'all') ;
 
 
 
 [bigram, new_tagmap, new_tagcnt] = convert_syn_input(fullfile(exp_home, exp_subdir, in_file), ...
-    'tagcnt_thresh', 5, 'numtag_thresh', 1200) ;
+    'tagcnt_thresh', 3, 'numtag_thresh', 1200) ;
 
-[cn_known, cn_new, cn_all] = conver_conceptnet(fullfile(exp_home, db_subdir, 'CN_graph.mat'), new_tagmap, 'logistic') ;
+[cn4, cn_new, cn5] = conver_conceptnet(fullfile(exp_home, db_subdir, 'CN_graph.mat'), new_tagmap, 'logistic') ;
 
 fprintf(1, '#tags %d, #bigrams %d\n', size(bigram,1), nnz(bigram));
-fprintf(1, '\trecall of bigrams in cn-known %d (%0.4f)\n', nnz(bigram & cn_known), nnz(bigram & cn_known)/nnz(cn_known));
+fprintf(1, '\trecall of bigrams in cn-known %d (%0.4f)\n', nnz(bigram & cn4), nnz(bigram & cn4)/nnz(cn4));
 fprintf(1, '\trecall of bigrams in cn-new %d (%0.4f)\n', nnz(bigram & cn_new), nnz(bigram & cn_new)/nnz(cn_new));
 
 %bg1 = bigram.*(bigram>1) ;
 %fprintf(1, '#bigrams>1 %d\n', nnz(bg1));
-%fprintf(1, 'recall of bg1 in cn-known %d (%0.4f)\n', nnz(bg1 & cn_known), nnz(bg1 & cn_known)/nnz(cn_known));
+%fprintf(1, 'recall of bg1 in cn-known %d (%0.4f)\n', nnz(bg1 & cn4), nnz(bg1 & cn4)/nnz(cn4));
 %fprintf(1, 'recall of bg1 in cn-new %d (%0.4f)\n', nnz(bg1 & cn_new), nnz(bg1 & cn_new)/nnz(cn_new));
 
 [~, jnt] = sort(cell2mat(values(new_tagmap)) );
 tag_list = keys(new_tagmap);
 tag_list = tag_list(jnt);
 
-[~] = eval_conceptrank(cn_new, bigram, cn_known, 'verbose', 1);
-print_top_pairs(tril(bigram), tag_list, topK, cn_known, cn_all, 'bigram') ;
+[~] = eval_conceptrank(cn_new, bigram, cn4, 'verbose', 1);
+print_top_pairs(tril(bigram), tag_list, topK, cn4, cn5, 'bigram') ;
 
 if strcmp(obs_type, 'bigram')
     obsf = normalise(bigram);
 else
-    obsf = compute_pagerank_mat(cn_all, alph);
+    obsf = compute_pagerank_mat(cn5, alph);
 end
 
 alphR_val = 50/sum(bigram(:)>0) ; %[1e-9, 1e-6];%, 0.001 0.005 .01];% .02 .05 .1 .25 .5 1 2 4 10] ;
-rG = .05*rand(size(cn_known)) ;
+rG = .05*rand(size(cn4)) ;
 
 for j = 1 %: length(alphR_val)
     aR = alphR_val(j) ;
-    init_G = cn_known + rG ;
+    if strcmp('init_type', 'cn4')
+        init_G = cn4 + rG ;
+        lower_bound = cn4; 
+    else
+        init_G = cn5 + rG ;
+        lower_bound = cn5; 
+    end
+    
     if strcmp(entry_type, 'bigram-only')
         init_G = init_G.*(bigram>0)  ;
     end
     fprintf(1, '\n%s alpha-R = %0.4f ... \n', datestr(now, 31), aR);
     for jm = 20 
         tic
-        GW = opt_wrap_conceptrank(cn_known, init_G, obsf, 'alphR', aR, 'alph', alph, ...
+        GW = opt_wrap_conceptrank(lower_bound, init_G, obsf, 'alphR', aR, 'alph', alph, ...
             'maxiter', jm, 'GradObj', gradobj, 'solver', solver, 'bfgs_ttits', bfgs_ttits);
         % bfgs_ttits is the max-total-its in LBFGS, default 5000
         toc
@@ -61,7 +69,7 @@ for j = 1 %: length(alphR_val)
 end
 
 GW = GW+GW';
-print_top_pairs(tril(GW), tag_list, topK, cn_known, cn_all, 'ConceptRank') ;
+print_top_pairs(tril(GW), tag_list, topK, cn_known, cn5, 'ConceptRank') ;
 
 return
 

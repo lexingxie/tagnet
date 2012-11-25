@@ -72,6 +72,7 @@ if strcmp(hostn(1:7), 'clavier') % macox
     gp_rr_id = gp_row_id(gp_row_id>0);
     
     G5p = G5p + G5p' ;
+    G5p = G5p - diag(diag(G5p)); % remove diagonal entry
     
     gp_row_id(gp_row_id<0) = 1;
     Yadd = G5p(gp_row_id, gp_col_id);

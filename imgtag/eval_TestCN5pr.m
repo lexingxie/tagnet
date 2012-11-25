@@ -1,25 +1,42 @@
 
-eval_str = 'eval_TestCN5pr_' ;
+function eval_TestCN5pr(use_norm, cat_or_add)
+
+if use_norm
+    eval_str = 'eval_TestCN5pr_norm_' ;
+else
+    eval_str = 'eval_TestCN5pr_unrm_' ;
+end
+
+eval_str = [eval_str cat_or_add '_'];
 
 exp_envsetup
 exp_setparams
 
-echo on
 
 num_data_sample = inf;
 
 whos
 
-%Ycache_mat = fullfile(data_dir, 'Y_CN5pr.mat');
-Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
+if use_norm
+    Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
+else
+    Ycache_mat = fullfile(data_dir, 'Y_CN5pr.mat');
+end
 load(Ycache_mat, 'Y', 'Y5p', 'Yadd');
 
-% cat features
-%Y = [Y(1:NUMV, :); Y5p(1:NUMV, :)] ;
-% add features
-Y = Yadd(1:NUMV, :); 
+switch lower(cat_or_add)
+    case 'cat'    
+        Y = [Y(1:NUMV, :); Y5p(1:NUMV, :)] ;
+    case 'add'
+        % add features
+        Y = Yadd(1:NUMV, :);
+    case 'none'
+        Y = Y5p(1:NUMV, :) ;
+    otherwise 
+        disp(' dunno which feature to take, error!')
+        return
+end
 
-echo off
 exp_setupTraining
 
 echo on
@@ -29,6 +46,7 @@ id_train = find(R(:));
 [U, V] = matchbox(R, X, Y, alph, 'indR', id_train, 'k', K, 'max_iter', max_iter, 'solver', 'lbfgs');
 
 echo off
+
 exp_runTest
 
 clear imgfeat imgid imglab X* R

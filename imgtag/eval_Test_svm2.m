@@ -1,6 +1,6 @@
 % SVM baseline, with no hyper par search
 
-eval_str = 'eval_Testsvm_' ;
+eval_str = 'eval_Testsvm2_' ;
 
 exp_envsetup
 exp_setparams
@@ -105,7 +105,7 @@ for j = 1 : ntag
     [~, ~, Rtest(:, j)] = svmpredict(imglab(:,j), Xtest', svm_param{j});
     pk = compute_perf(Rtest(:, j), 1.*full(imglab(:,j)), 'store_raw_pr', 2);
     
-    fprintf(1, 'tag%d "%s" test ap: %0.4f, auc: %0.4f, F1: %0.4f\n\n', j, tag_dim{j}, pk.ap, pk.auc, pk.f1);
+    fprintf(1, '%s tag%d "%s" test ap: %0.4f, auc: %0.4f, F1: %0.4f\n\n', datestr(now, 31), j, tag_dim{j}, pk.ap, pk.auc, pk.f1);
     
 end
 save(sav_file, 'svm_param', 'tag_dim') ;

@@ -34,7 +34,9 @@ NUMV = 500;
 
 if strcmp(hostn(1:7), 'clavier') % macox
     
-    [vs, iv] = sort(vscore, 'descend'); % take ~150 dimensions for now
+    %[vs, iv] = sort(vscore, 'descend'); % take ~150 dimensions for now
+    [vs, iv] = sort(vcnt, 'descend'); % take ~150 dimensions for now
+    
     tag_feat = tag_feat(:, iv(1: NUMV));
     Y = log(tag_feat + 1)';
     Y = Y/max(Y(:));

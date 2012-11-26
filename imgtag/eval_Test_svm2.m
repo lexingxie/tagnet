@@ -7,7 +7,9 @@ exp_setparams
 
 whos
 
-num_data_sample = inf;
+if ~exist('num_data_sample', 'var')
+    num_data_sample = inf;
+end
 
 disp(eval_str)
 disp(num_data_sample)

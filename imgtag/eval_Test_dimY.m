@@ -1,6 +1,6 @@
 
 
-function eval_Test_dimY(sort_y, num_data_sample)
+function eval_Test_dimY(sort_y, num_data_sample, K)
 
 % test different choices of sorting and taking NUMV rows in feature Y 
 switch sort_y
@@ -13,6 +13,10 @@ switch sort_y
     otherwise
         fprintf(1, ' dunno know how to select Y, quit');
         return;
+end
+
+if nargin < 3
+    K = 8;
 end
 
 exp_envsetup

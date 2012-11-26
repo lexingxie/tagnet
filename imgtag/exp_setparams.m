@@ -9,7 +9,9 @@
 NUMV = 150 ;
 
 % # of hidden dimensions
-K = 5; %[3 5 7] ; %9:-2:5;
+if ~exist('K', 'var')
+    K = 5; %[3 5 7] ; %9:-2:5;
+end
 alph = 100 ; %[1 10 100 1000 10000]; 
 max_iter = 10; %25
 

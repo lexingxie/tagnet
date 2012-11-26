@@ -33,7 +33,7 @@ if strcmp(hostn(1:7), 'clavier') % macox
     Y = Y/max(Y(:));
     
     %save(pr_graph_mat, 'G5', 'G5p', 'word_idmap', 'alph');
-    load(pr_graph_mat, 'G5p', 'word_idmap');
+    load(pr_graph_mat, 'G5', 'G5p', 'word_idmap');
     
     [nrow, ncol] = size(Y) ;
     gp_col = target_tags(found_wn);
@@ -72,7 +72,7 @@ if strcmp(hostn(1:7), 'clavier') % macox
     gp_rr_id = gp_row_id(gp_row_id>0);
     
     G5p = G5p + G5p' ;
-    G5p = G5p - diag(diag(G5p)); % remove diagonal entry
+    %G5p = G5p - diag(diag(G5p)); % remove diagonal entry
     
     col_valid = setdiff(1:ncol, col_err);
     
@@ -92,7 +92,26 @@ if strcmp(hostn(1:7), 'clavier') % macox
     end
     Y5p = Y5p/max(Y5p(:));
     
-    save(Ycache_mat, 'Y5p', 'Y', 'Yadd');
+    % produce the "add" and standalone version 
+    % of the original graph feature
+    rawg = G5 ;
+    %rawg = rawg - diag(diag(rawg)); 
+    % do not remove diagonal entry (helps similarity)
+    
+    Yadg = rawg(gp_row_id, gp_col_id);
+    for e = col_err
+        Yadg(:, e) = mean(Yadg(:,col_valid), 2);
+    end
+    Yadg = Yadg/max(Yadg(:)) + Y ;
+    Yadg(row_err, :) = Y(row_err, :); % fill in empty row with Y
+    
+    Y5g = rawg(gp_rr_id, gp_col_id) ;
+    for e = col_err
+        Y5g(:, e) = mean(Y5g(:,col_valid), 2);
+    end
+    Y5g = Y5g/max(Y5g(:));
+    
+    save(Ycache_mat, 'Y5p', 'Y', 'Yadd', 'Y5g', 'Yadg');
 else
     fprintf(1, 'quit: do not have input data on this machine!\n');
 end

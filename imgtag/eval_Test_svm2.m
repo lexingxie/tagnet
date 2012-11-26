@@ -1,5 +1,4 @@
 % SVM baseline, with no hyper par search
-
 eval_str = 'eval_Testsvm2_' ;
 
 exp_envsetup
@@ -88,13 +87,15 @@ fprintf('\n\n=========== K=%d, alpha=%f, num-v=%d ==============\n\n', K, alph, 
 
 %gam = 0 ;
 svm_param = cell(ntag, 1);
+svm_options = '-t 0 -c 1 -q';
+    
 %parfor j = 1 : ntag
 for j = 1 : ntag
     fprintf(1, 'Learning linear svm for tag #%d, "%s"\n', j, tag_dim{j});
     % linear SVM baseline
     %[mod_final, ~] = cv_svm_wrapper2(1.*imglab(:,j), X', ...
-    %    'do_normalize', true, 'kernel_type', 0, 'gam', 0, 'Cpen', 10.^(-1:3), 'neg_pos_ratio', 8);
-    svm_options = '-t 0 -c 1 -q';
+    %    'do_normalize', true, 'kernel_type', 0, 'gam', 0, 'Cpen',
+    %    10.^(-1:3), 'neg_pos_ratio', 8);
     train_label = full(1.*(R(:,j)~=0) - 1.*(R(:,j)==0) ) ;
     
     out_flag = sample_pos_neg(train_label, neg_pos_ratio, max_num_pos, max_num_neg);
@@ -106,7 +107,9 @@ for j = 1 : ntag
     lsvm = svmtrain(train_label(out_flag), train_data, svm_options);
     svm_param{j} = lsvm;
     
-    [~, ~, Rtest(:, j)] = svmpredict(imglab(:,j), Xtest', svm_param{j});
+    [pred_label, ~, Rtest(:, j)] = svmpredict(imglab(:,j), Xtest', svm_param{j});
+    Rtest(:, j) = abs(Rtest(:, j)).*pred_label;
+    
     pk = compute_perf(Rtest(:, j), 1.*full(imglab(:,j)), 'store_raw_pr', 2);
     
     fprintf(1, '%s #%d "%s" test ap: %0.4f, auc: %0.4f, F1: %0.4f, prior: %0.4f\n\n', ...

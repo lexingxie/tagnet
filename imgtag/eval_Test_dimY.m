@@ -1,6 +1,6 @@
 
 
-function eval_Test_dimY(sort_y, num_data_sample, K)
+function eval_Test_dimY(sort_y, num_data_sample, K, los_func)
 
 % test different choices of sorting and taking NUMV rows in feature Y 
 switch sort_y
@@ -17,6 +17,10 @@ end
 
 if nargin < 3
     K = 8;
+end
+
+if nargin<4
+    los_func = 'l2';
 end
 
 exp_envsetup
@@ -66,7 +70,11 @@ echo on
 %% learn the model
 fprintf('\n\n=========== K=%d, alpha=%f, num-v=%d ==============\n\n', K, alph, size(Y,1));
 id_train = find(R(:));
-[U, V] = matchbox(R, X, Y, alph, 'indR', id_train, 'k', K, 'max_iter', max_iter, 'solver', 'lbfgs');
+if strcmpi(los_func, 'l2')
+    [U, V] = matchbox(R, X, Y, alph, 'indR', id_train, 'k', K, 'max_iter', max_iter, 'solver', 'lbfgs');
+else
+    [U, V] = matchbox_hinge(R, X, Y, alph, 'indR', id_train, 'k', K, 'max_iter', max_iter, 'solver', 'lbfgs');
+end
 
 echo off
 exp_runTest

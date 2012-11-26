@@ -334,7 +334,6 @@ if ~isempty(testlabel) && ~isempty(testobs)
 
 end
 
-
 fprintf(1, '\n');
 
 %% pack some extra returns

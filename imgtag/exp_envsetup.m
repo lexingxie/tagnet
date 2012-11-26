@@ -16,6 +16,8 @@ elseif strcmp(hostn, 'cantabile')
     data_dir = '/home/xlx/data/imgnet-flickr/nuswide2';
 elseif strcmp(hostn, 'xuming-UbuntuBox');
     data_dir = '/home/xlx/proj/imgnet-flickr/nuswide2';
+elseif strcmp(hostn, 'xuming-UbuntuBox');  % change to point to "nuswide", with "db2" and "concept..." in the same parent dir
+    data_dir = '/home/xhe/Dropbox ... ';
 else % mac os
     data_dir = '/Users/xlx/Documents/proj/imgnet-flickr/nuswide';
 end

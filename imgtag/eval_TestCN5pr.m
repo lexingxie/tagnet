@@ -1,29 +1,28 @@
 
-function eval_TestCN5pr(use_norm, cat_or_add)
+function eval_TestCN5pr(Y_mat, cat_or_add, num_data_sample)
 
-if use_norm
-    eval_str = 'eval_TestCN5pr_norm_' ;
-else
-    eval_str = 'eval_TestCN5pr_unrm_' ;
-end
+[~, ystr, ~] = fileparts(Y_mat);
 
-eval_str = [eval_str cat_or_add '_'];
+eval_str = ['eval_Test' ystr '_' cat_or_add '_'] ;
 
 exp_envsetup
 exp_setparams
 
-
-num_data_sample = inf;
+if nargin < 3
+    num_data_sample = inf;
+end
 
 whos
 
 disp(eval_str)
+disp(num_data_sample)
 
-if use_norm
-    Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
-else
-    Ycache_mat = fullfile(data_dir, 'Y_CN5_pr.mat');
-end
+% if use_norm
+%     Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
+% else
+%     Ycache_mat = fullfile(data_dir, 'Y_CN5_pr.mat');
+% end
+Ycache_mat = fullfile(data_dir, Y_mat);
 load(Ycache_mat, 'Y', 'Y5p', 'Yadd');
 
 switch lower(cat_or_add)

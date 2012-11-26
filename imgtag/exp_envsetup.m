@@ -10,7 +10,7 @@ dbstop if error
 
 [~,hostn] = system('hostname');
 hostn = deblank(hostn);
-if strcmp(hostn, 'kinross') || strcmp(hostn, 'koves')
+if strcmp(hostn, 'kinross') || strcmp(hostn, 'koves') || strcmp(hostn, 'infib2') || strcmp(hostn, 'infib1')
     data_dir = '/home/users/xlx/vault-xlx/imgnet-flickr/nuswide2';
 elseif strcmp(hostn, 'cantabile')
     data_dir = '/home/xlx/data/imgnet-flickr/nuswide2';

@@ -7,10 +7,10 @@ exp_envsetup
 
 whos
 
-%pr_matname = 'CN5_prnorm.mat';
-pr_matname = 'CN5_pr.mat' ;
+pr_matname = 'CN5_prnorm.mat';
+%pr_matname = 'CN5_pr.mat' ;
 Ycache_mat = fullfile(data_dir, ['Y_' pr_matname]);
-pr_graph_mat = fullfile(data_dir, '../db2', pr_matname);
+pr_graph_mat = fullfile(data_dir, '../db2/conceptnet-graph', pr_matname);
 
 tag_feat_mat = fullfile(data_dir, 'tag_wn_feature.mat');
 load(tag_feat_mat, 'tag_feat', 'found_wn', 'vocab', 'vcnt', 'vscore', 'target_tags');
@@ -78,14 +78,18 @@ if strcmp(hostn(1:7), 'clavier') % macox
     
     gp_row_id(gp_row_id<0) = 1;
     Yadd = G5p(gp_row_id, gp_col_id);
-    Yadd(:, col_err) = mean(Yadd(:,col_valid), 2);
+    for e = col_err
+        Yadd(:, e) = mean(Yadd(:,col_valid), 2);
+    end
     %Yadd(:, col_err) = 0;
     Yadd = Yadd/max(Yadd(:)) + Y ;
     Yadd(row_err, :) = Y(row_err, :);
     
     Y5p = G5p(gp_rr_id, gp_col_id) ;
     %Y5p(:, col_err) = 0;
-    Y5p(:, col_err) = mean(Y5p(:,col_valid), 2);
+    for e = col_err
+        Y5p(:, e) = mean(Y5p(:,col_valid), 2);
+    end
     Y5p = Y5p/max(Y5p(:));
     
     save(Ycache_mat, 'Y5p', 'Y', 'Yadd');

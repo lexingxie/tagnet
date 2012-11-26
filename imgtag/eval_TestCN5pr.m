@@ -1,5 +1,5 @@
 
-function eval_TestCN5pr(Y_mat, cat_or_add, num_data_sample)
+function eval_TestCN5pr(Y_mat, cat_or_add, num_data_sample, K)
 
 [~, ystr, ~] = fileparts(Y_mat);
 
@@ -10,6 +10,10 @@ exp_setparams
 
 if nargin < 3
     num_data_sample = inf;
+end
+
+if nargin < 4
+    K = 8;
 end
 
 whos

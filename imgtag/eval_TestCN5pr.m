@@ -23,11 +23,13 @@ disp(num_data_sample)
 %     Ycache_mat = fullfile(data_dir, 'Y_CN5_pr.mat');
 % end
 Ycache_mat = fullfile(data_dir, Y_mat);
-load(Ycache_mat, 'Y', 'Y5p', 'Yadd');
+load(Ycache_mat, 'Y', 'Y5p', 'Yadd', 'Y5g');
 
 switch lower(cat_or_add)
     case 'cat'    
         Y = [Y(1:NUMV, :); Y5p(1:NUMV, :)] ;
+    case 'gcat'
+        Y = [Y(1:NUMV, :); Y5g(1:NUMV, :)] ;
     case 'add'
         % add features
         Y = Yadd(1:NUMV, :);

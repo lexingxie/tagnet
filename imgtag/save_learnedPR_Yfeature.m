@@ -13,6 +13,7 @@ pg_matname = 'cn_learned_max.mat' ;
 %   norm_eff_cn           3109x3109            77327048  double   
 %pr_matname = 'cn_rank_avg.mat' ;
 pr_matname = 'cn_rank_max.mat' ;
+%pr_matname = 'cn_aggpr_max.mat' ;
 %   outpr      3109x3109            77327048  double  
 
 pr_graph_mat = fullfile(data_dir, '../conceptrank-exp/syn93_output', pg_matname);
@@ -42,7 +43,7 @@ if strcmp(hostn(1:7), 'clavier') % macox
     Y = Y/max(Y(:));
     
     %save(pr_graph_mat, 'G5', 'G5p', 'word_idmap', 'alph');
-    load(pr_graph_mat, 'eff_new_tag_list');
+    load(pr_graph_mat, 'eff_new_tag_list', 'norm_eff_cn');
     num_tag = length(eff_new_tag_list);
     word_idmap = containers.Map(eff_new_tag_list, num2cell(1:num_tag));
     
@@ -104,7 +105,15 @@ if strcmp(hostn(1:7), 'clavier') % macox
     end
     Y5p = Y5p/max(Y5p(:));
     
-    save(Ycache_mat, 'Y5p', 'Y', 'Yadd');
+    rawg = norm_eff_cn ;
+    rawg = rawg - diag(diag(rawg)); % remove diagonal entry
+    Y5g = rawg(gp_rr_id, gp_col_id) ;
+    if ~isempty(col_err)
+        Y5g(:, col_err) = mean(Y5g(:,col_valid), 2);
+    end
+    Y5g = Y5g/max(Y5g(:));
+    
+    save(Ycache_mat, 'Y5p', 'Y', 'Yadd', 'Y5g');
 else
     fprintf(1, 'quit: do not have input data on this machine!\n');
 end

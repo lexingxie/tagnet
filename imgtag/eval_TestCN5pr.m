@@ -13,7 +13,7 @@ if nargin < 3
 end
 
 if nargin < 4
-    K = 8;
+    K = 5;
 end
 
 whos

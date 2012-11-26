@@ -97,6 +97,8 @@ for j = 1 : ntag
     train_label = 1.*(R(:,j)~=0) - 1.*(R(:,j)==0)  ;
     
     out_flag = sample_pos_neg(train_label, neg_pos_ratio, max_num_pos, max_num_neg);
+    fprintf(1, ' resample data : %d positive, %d negative, %d discarded \n', ...
+        sum(train_label(out_flag)>0), sum(train_label(out_flag)<0), sum(~out_flag));
     
     train_data = X(:, out_flag)' ;
     lsvm = svmtrain(train_label(out_flag), train_data, svm_options);

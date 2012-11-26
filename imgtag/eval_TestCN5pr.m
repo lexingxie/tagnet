@@ -43,8 +43,9 @@ switch lower(cat_or_add)
     case 'none'
         Y = Y5p(1:NUMV, :) ;
     otherwise 
-        disp(' dunno which feature to take, error!')
-        return
+        disp(cat_or_add);
+        error(' dunno which feature to take, error!')
+        
 end
 
 exp_setupTraining

@@ -37,7 +37,7 @@ switch lower(cat_or_add)
     case 'add'
         % add features
         Y = Yadd(1:NUMV, :);
-    case 'add'
+    case 'gadd'
         % add graph features
         Y = Yadg(1:NUMV, :);
     case 'none'

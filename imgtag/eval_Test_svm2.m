@@ -43,6 +43,7 @@ nlen = length(tagcnt);
 % subselect some data
 if ~isinf(num_data_sample)
     idx = rand_idx(nlen, num_data_sample) ;
+    fprintf(1, 'Resampling all data from %d to %d\n\n', nlen, num_data_sample);
 else
     idx = 1 : nlen;
 end
@@ -108,7 +109,8 @@ for j = 1 : ntag
     [~, ~, Rtest(:, j)] = svmpredict(imglab(:,j), Xtest', svm_param{j});
     pk = compute_perf(Rtest(:, j), 1.*full(imglab(:,j)), 'store_raw_pr', 2);
     
-    fprintf(1, '%s tag%d "%s" test ap: %0.4f, auc: %0.4f, F1: %0.4f\n\n', datestr(now, 31), j, tag_dim{j}, pk.ap, pk.auc, pk.f1);
+    fprintf(1, '%s #%d "%s" test ap: %0.4f, auc: %0.4f, F1: %0.4f, prior: %0.4f\n\n', ...
+        datestr(now, 31), j, tag_dim{j}, pk.ap, pk.auc, pk.f1, pk.prior);
     
 end
 save(sav_file, 'svm_param', 'tag_dim') ;
@@ -151,6 +153,6 @@ end
 clear imgfeat imgid imglab X* R
 save(sav_file) 
 
-matlabpool close
+%matlabpool close
 
 diary off

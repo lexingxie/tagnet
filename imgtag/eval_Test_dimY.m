@@ -1,7 +1,8 @@
 
 
-function eval_Test_dimY(sort_y)
+function eval_Test_dimY(sort_y, num_data_sample)
 
+% test different choices of sorting and taking NUMV rows in feature Y 
 switch sort_y
     case 'vcnt'
         eval_str = 'eval_Test_Ycnt_' ;
@@ -20,9 +21,12 @@ exp_setparams
 whos
 
 %echo on
+if nargin < 2
+    num_data_sample = inf;
+end
 
-num_data_sample = inf;
 disp(eval_str)
+disp(num_data_sample)
 
 tag_feat_mat = fullfile(data_dir, 'tag_wn_feature.mat');
 load(tag_feat_mat, 'tag_feat', 'found_wn', 'vocab', 'vcnt', 'vscore', 'target_tags');

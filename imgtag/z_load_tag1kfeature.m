@@ -1,3 +1,5 @@
+%% not used , replaced by eval_tag1k
+
 data_dir = '/Users/xlx/Documents/proj/imgnet-flickr/nuswide' ;
 load(fullfile(data_dir, 'tag_wn_feature.mat'), 'vocab', 'vscore')
 % whos

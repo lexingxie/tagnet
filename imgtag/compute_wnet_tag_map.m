@@ -6,7 +6,7 @@ hostn = deblank(hostn);
 if strcmp(hostn, 'kinross') || strcmp(hostn, 'koves')
     db_dir = '/home/users/xlx/vault-xlx/imgnet-flickr/db2';
 else % mac os
-    db_dir = '/Users/xlx/proj/ImageNet/db2';
+    db_dir = '/Users/xlx/Documents/proj/imgnet-flickr/db2';
 end
 
 

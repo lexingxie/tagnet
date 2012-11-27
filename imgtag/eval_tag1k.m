@@ -2,7 +2,7 @@
 exp_envsetup
 
 result_mat_name = 'eval_Testall_20121123T215757.mat';
-load(fullfile(data_dir, 'run-data', result_mat_name), 'U', 'V', 'Xtest', 'img_idx');
+load(fullfile(data_dir, 'run-data', result_mat_name), 'U', 'V', 'Xtest', 'img_idx', 'Y');
 
 eval_str = 'eval_tag1k_' ;
 
@@ -13,7 +13,7 @@ exp_setparams
 
 %% load tag features, setup Y for tag1k
 
-load(fullfile(data_dir, 'tag_wn_feature.mat'), 'vocab', 'vscore')
+load(fullfile(data_dir, 'tag_wn_feature.mat'), 'vocab', 'vscore', 'found_wn', 'target_tags')
 % whos
 %   Name                 Size                 Bytes  Class             Attributes
 % 
@@ -77,20 +77,40 @@ for i = 1 : NUMV
     end
 end
 
+tag_known = target_tags(found_wn);
 
 % find top tags
 %[cvocab, j1, j2] = intersect(tag1k, col_label);
-tagcnt = sum(train_tag_1k, 1);
+tagcnt = full(sum(train_tag_1k, 1));
 [tagcnt, js] = sort(tagcnt, 'descend');
 
 for i=1:81, tag81p{i}=[tag81{i}, 's']; end
 for i=1:81, tag81s{i}=[tag81{i}(1:end-1)]; end
 tag1k_reduced = setdiff(tag1k, [tag81; tag81p'; tag81s']);
-clear tag81*
+clear tag81p tag81s
 
 %Xtest = imgfeat'; this is loaded from model file
 Y1k = log(tag1k_feat + 1)';
 test_tag_col = test_tag_1k(img_idx, :);
+
+nm = size(Yorig, 2);
+knbr = 3 ; %[1 3 5 10];
+tag_avg_dist = zeros(ntag, length(knbr));
+tag_near_map = containers.Map('init', {'',1});
+% ta = intersect(tag1k_reduced, tag1k(js(1:50)) );
+for i = 1 : ntag
+    dx = Y1k(:,i)*ones(1, nm) - Yorig;
+    dy = sum(dx.^2, 1) ;
+    [sd, idy] = sort(dy);
+    tag_near_map(col_label{i}) = tag_known(idy(1:knbr(1)) );
+    for j = 1 : length(knbr)
+        tag_avg_dist(i, j) = sum(sd(1:knbr(j)))/knbr(j) ;
+    end
+end
+
+[~, ia] = sort(tag_avg_dist, 1);
+col_label(ia(1:10, :))
+%col_label(ia(1:10,4))'
 
 p10 = zeros(1, ntag);
 tcnt = 0;
@@ -109,7 +129,7 @@ for i = 1 : 150 % 1 : 10 %length(tag1k)
     p10(tj) = p_cur.p_at_d;
     % print score and filename for the top 10
     %fprintf(1, 'tag#%d "%s": \t p@10=%0.4f \t ap=%0.4f \t auc=%0.4f\n', tcnt, tag1k{js(i)}, p10(tj), p_cur.ap, p_cur.auc);
-    fprintf(1, '%0.4f\t %0.4f\t %0.4f\t %s\n', p_cur.p_at_d, p_cur.ap, p_cur.auc, cur_tag);
+    fprintf(1, '# %0.4f\t %0.4f\t %0.4f\t %s\n', p_cur.p_at_d, p_cur.ap, p_cur.auc, cur_tag);
     if 0
         [~, rj] = sort(Ri, 'descend');
         %disp ( test_img_name(rj(1:10)) )

@@ -14,8 +14,11 @@ n = size(G, 1);
 [gi, gj] = ind2sub([n,n], ig(1:topK));
 
 fprintf(1, ' Top %d concept pairs by %s: \n', topK, rnk_critera);
-[c(:,1), c(:,2)] = ind2sub([n n], find(known_subi) );
-[d(:,1), d(:,2)] = ind2sub([n n], find(new_subi) );
+%[c(:,1), c(:,2)] = ind2sub([n n], find(known_subi) );
+%[d(:,1), d(:,2)] = ind2sub([n n], find(new_subi) );
+
+Ks = known_subi + known_subi';
+Ns = new_subi + new_subi'; 
 
 for i = 1 : topK
     score = full( gg(ig(i)) );
@@ -26,9 +29,9 @@ for i = 1 : topK
     end
     
     ik = gi(i); jk = gj(i);
-    if any(c(1,:)==ik & c(2,:)==jk) || any(c(1,:)==jk & c(2,:)==ik)
+    if Ks(ik, jk) > eps('single')  %any(c(1,:)==ik & c(2,:)==jk) || any(c(1,:)==jk & c(2,:)==ik)
         statustr = '(konwn)' ;
-    elseif ~isempty(d) && ( any(d(1,:)==ik & d(2,:)==jk) || any(d(1,:)==jk & d(2,:)==ik) )
+    elseif Ns(ik, jk) > eps('single') %~isempty(d) & ( any(d(1,:)==ik & d(2,:)==jk) || any(d(1,:)==jk & d(2,:)==ik) )
         statustr = '(new-hit)' ;
     else
         statustr = '(-)' ;

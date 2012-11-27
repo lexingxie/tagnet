@@ -12,7 +12,8 @@ tj = strmatch(cur_tag, col_label, 'exact');
 ti = strmatch(cur_tag, tag1k, 'exact');
 
 if isempty(tt) || isempty(tj)
-    fprintf(1, 'tag %s not found\n', cur_tag);
+    fprintf(1, '# tag %s not found\n', cur_tag);
+    return; 
 end
 
 Ri = Xtest' * U' * V * Y1k(:, tj);
@@ -23,7 +24,7 @@ p_cur = compute_perf(Ri, 1.*full(curlab), 'store_raw_pr', 2, 'precision_depth', 
 
 % print score and filename for the top 10
 %fprintf(1, 'tag#%d "%s": \t p@10=%0.4f \t ap=%0.4f \t auc=%0.4f\n', tcnt, tag1k{js(i)}, p10(tj), p_cur.ap, p_cur.auc);
-fprintf(1, '%0.4f\t %0.4f\t %0.4f\t %s\n', p_cur.p_at_d, p_cur.ap, p_cur.auc, cur_tag);
+fprintf(1, '# %0.4f\t %0.4f\t %0.4f\t %s\n', p_cur.p_at_d, p_cur.ap, p_cur.auc, cur_tag);
 
 [~, rj] = sort(Ri, 'descend');
 

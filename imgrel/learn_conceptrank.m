@@ -1,5 +1,5 @@
 
-function [GW, tag_list, cn_known, cn_all] = learn_conceptrank(varargin)
+function [GW, tag_list, cn4, cn_new, cn5] = learn_conceptrank(varargin)
 % Optional parameters:
 % obs_type controls what observation it fits: "bigram", or conceptnet-5
 % entry_type controls what the variables are: "bigram-only", or all
@@ -10,7 +10,6 @@ function [GW, tag_list, cn_known, cn_all] = learn_conceptrank(varargin)
     'db_subdir', 'db2', 'exp_subdir', 'conceptrank-exp', 'topK', 15, ...
     'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500, ...
     'obs_type', 'cn5-pr', 'init_type', 'cn4', 'entry_type', 'all') ;
-
 
 
 [bigram, new_tagmap, new_tagcnt] = convert_syn_input(fullfile(exp_home, exp_subdir, in_file), ...

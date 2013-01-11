@@ -85,8 +85,8 @@ load('/Users/xlx/Documents/proj/imgnet-flickr/conceptrank-exp/syn_random10.mat')
 whos
   Name                 Size             Bytes  Class    Attributes
 
-  bigram_list      22356x1             178848  int64              
-  tag_list           458x12             10992  char    
+  bigram_list      22356x1             178848  int64
+  tag_list           458x12             10992  char
   tag_cnt
   usr_list            28x15               840  char               
   wnet_list           10x9                180  char    
@@ -101,7 +101,7 @@ c(1:2, :) = c(1:2, :) + 1; % zero-based indexing in python --> 1-based indexing 
 
 % convert tag index
 val_idx = unique( [ c(1, :), c(2, :) ] ) ;
-tag_idx = find(tag_cnt >= tagcnt_thresh); 
+tag_idx = find(tag_cnt >= tagcnt_thresh);
 val_idx = intersect(tag_idx, val_idx);
     
 if length(val_idx) > numtag_thresh % take top #numtag_thresh of tag

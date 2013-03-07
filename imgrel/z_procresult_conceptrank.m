@@ -95,7 +95,7 @@ for k = 1 : length(synset_list)
         if any(syn_cnt == [25 50 100 200 400])
             mperf = eval_conceptrank(CN_new, W, CN4, 'prec_depth', 10, 'eval_mode', 'macro', 'verbose', 0) ; 
             bmperf = eval_conceptrank(CN_new, B, CN4, 'prec_depth', 10, 'eval_mode', 'macro', 'verbose', 0) ; 
-            mat_name = fullfile(exp_home, exp_subdir, sprintf('%s%_n03d.mat', log_name, syn_cnt) );
+            mat_name = fullfile(exp_home, exp_subdir, sprintf('%s%_n%03d.mat', log_name, syn_cnt) );
             save(mat_name)
         end
     end

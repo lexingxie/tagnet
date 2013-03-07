@@ -1,6 +1,12 @@
 
 
-exp_home = '/Users/xlx/Documents/proj/imgnet-flickr';
+[~,hostn] = system('hostname');
+if strcmp(hostn(1:7), 'clavier') % macox
+    exp_home = '/Users/xlx/Documents/proj/imgnet-flickr';
+elseif strcmp(hostn(1:9), 'cantabile') % desktop
+    exp_home = '/home/xlx/data/imgnet-flickr';
+end
+
 exp_subdir = 'conceptrank-exp' ;
 dateid = datestr(now, 30);
 log_name = sprintf('ilsvrc_eval_%s', dateid);

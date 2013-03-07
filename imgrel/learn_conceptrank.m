@@ -4,18 +4,34 @@ function [GW, tag_list, cn4, cn_new, cn5] = learn_conceptrank(varargin)
 % obs_type controls what observation it fits: "bigram", or conceptnet-5
 % entry_type controls what the variables are: "bigram-only", or all
 
-[in_file, exp_home, db_subdir, exp_subdir, topK, ...
+[ops, in_file, exp_home, db_subdir, exp_subdir, topK, ...
     alph, gradobj, solver, bfgs_ttits, obs_type, init_type, entry_type] = process_options(varargin, ...
-    'in_file', 'n01680983', 'exp_home','/Users/xlx/Documents/proj/imgnet-flickr', ...
+    'ops', '', 'in_file', 'n01680983', 'exp_home','/Users/xlx/Documents/proj/imgnet-flickr', ...
     'db_subdir', 'db2', 'exp_subdir', 'conceptrank-exp', 'topK', 15, ...
     'alph', .5, 'GradObj', 'on', 'solver', 'lbfgs', 'bfgs_ttits', 500, ...
     'obs_type', 'cn5-pr', 'init_type', 'cn4', 'entry_type', 'all') ;
 
+if strcmpi(ops, 'load_conceptnet') || isempty(in_file)
+    [cn4, cn_new, cn5, tag_list] = convert_conceptnet(fullfile(exp_home, db_subdir, 'CN_graph.mat'), '', 'logistic') ;
+    GW = [];
+    return
+elseif strcmpi(ops, 'load_bigram')
+    [bigram, new_tagmap, ~] = convert_syn_input(fullfile(exp_home, exp_subdir, in_file), ...
+        'tagcnt_thresh', 3, 'numtag_thresh', 1200, 'verbose', 0) ;
+    tk = keys(new_tagmap);
+    ik = values(new_tagmap);    ik = [ik{:}];
+    [ik, ii] = sort(ik);
+    assert(all(ik==1:length(ik)), 'bigram index mismatch!');
+    tag_list = tk(ii);
+    GW = bigram;
+    [cn4, cn_new, cn5] = deal([]);
+    return
+end
 
 [bigram, new_tagmap, new_tagcnt] = convert_syn_input(fullfile(exp_home, exp_subdir, in_file), ...
     'tagcnt_thresh', 3, 'numtag_thresh', 1200) ;
 
-[cn4, cn_new, cn5] = conver_conceptnet(fullfile(exp_home, db_subdir, 'CN_graph.mat'), new_tagmap, 'logistic') ;
+[cn4, cn_new, cn5] = convert_conceptnet(fullfile(exp_home, db_subdir, 'CN_graph.mat'), new_tagmap, 'logistic') ;
 
 fprintf(1, '#tags %d, #bigrams %d\n', size(bigram,1), nnz(bigram));
 fprintf(1, '\trecall of bigrams in cn-known %d (%0.4f)\n', nnz(bigram & cn4), nnz(bigram & cn4)/nnz(cn4));
@@ -74,7 +90,6 @@ return
 
 
 
-
 %% ----- function to convert wn input to matrixes -----
 function [bigram, new_tagmap, new_tagcnt] = convert_syn_input(input_mat_name, varargin)
 % optional params tagcnt_thresh, numtag_thresh)
@@ -92,12 +107,14 @@ whos
   wnet_list           10x9                180  char    
 %}
 
-[tagcnt_thresh, numtag_thresh] = process_options(varargin, ...
-    'tagcnt_thresh', 3, 'numtag_thresh', 1200);
+[tagcnt_thresh, numtag_thresh, verbose] = process_options(varargin, ...
+    'tagcnt_thresh', 3, 'numtag_thresh', 1200, 'verbose', 1);
 
 
 c = double(reshape(bigram_list, 3, []));
 c(1:2, :) = c(1:2, :) + 1; % zero-based indexing in python --> 1-based indexing here
+
+nusr = size(usr_list, 1);
 
 % convert tag index
 val_idx = unique( [ c(1, :), c(2, :) ] ) ;
@@ -133,24 +150,27 @@ c1 = [c1{:}];
 c2 = [c2{:}];
 
 bigram = sparse(c1, c2, 1.*c3, nv, nv);
+bigram = bigram / nusr ;
 
 %% code to filter out insignificant words and bigram entries
 
 bigram = bigram + bigram' ;
 % cignore = c(1:2, c(3,:)<0); % index of the ignored positions
 
-fprintf(1, '\n done loading data from %s \n', input_mat_name);
-fprintf(1, '\n  pruned %d tags to %d (min cnt %d), %d bigram entries to %d \n', ...
-    length(tag_list), nv, min(tag_cnt(val_idx)), size(bigram_list,1)/3, nnz(bigram)/2);
-
-tk = keys(new_tagcnt);
-tv = cell2mat(values(new_tagcnt));
-[~, jt] = sort(tv, 'descend'); 
-fprintf(1, ' most freq tags: \n');    fprintf(1, ' %s,', tk{jt(1:8)});
-fprintf(1, '\n least freq tags: \n');   fprintf(1, ' %s,', tk{jt(end-7:end)}); fprintf(1, '\n\n');
+if verbose>0
+    fprintf(1, '\n done loading data from %s \n', input_mat_name);
+    fprintf(1, '\n  pruned %d tags to %d (min cnt %d), %d bigram entries to %d \n', ...
+        length(tag_list), nv, min(tag_cnt(val_idx)), size(bigram_list,1)/3, nnz(bigram)/2);
+    
+    tk = keys(new_tagcnt);
+    tv = cell2mat(values(new_tagcnt));
+    [~, jt] = sort(tv, 'descend');
+    fprintf(1, ' most freq tags: \n');    fprintf(1, ' %s,', tk{jt(1:8)});
+    fprintf(1, '\n least freq tags: \n');   fprintf(1, ' %s,', tk{jt(end-7:end)}); fprintf(1, '\n\n');
+end
 
 %% ----- function to convert conceptnet graph into init-val + groundtruth for evaluation -----
-function [cn_known, cn_new, cn_all] = conver_conceptnet(cn_graph_mat, tag_map, renorm_method)
+function [cn_known, cn_new, cn_all, tag_map] = convert_conceptnet(cn_graph_mat, tag_map, renorm_method)
 
 load(cn_graph_mat, 'G4c', 'G5d', 'G5a', 'word_idmap' );
 %{
@@ -165,6 +185,11 @@ whos
   rel_idmap         14x1                 112  containers.Map              
   word_idmap      7797x1                 112  containers.Map   
 %}
+
+if isempty(tag_map)
+    tag_map = word_idmap;
+end
+
 if nargin<3 || strcmpi(renorm_method, 'logistic')
     renorm_func = inline( '.5*(1-exp(-x))./(1+exp(-x))' ); % logistic function
 else
@@ -192,7 +217,7 @@ Gnew = sparse(nw, nw);
 Gall = sparse(nw, nw);
 
 nr = length(G4c);
-assert(length(G5d)==nr, 'number of relatinos need to match');
+assert(length(G5d)==nr, 'number of relations need to match');
 for r = 1 : nr
     Gknown = Gknown + G4c{r} ;
     Gnew = Gnew + G5d{r} ;

@@ -13,3 +13,4 @@ for i = 1 : 2 %length(synset_list)
     
     save(fullfile(exp_home, out_mat_name), 'GW', 'tag_list', 'cn4', 'cn_new', 'cn5');
 end
+

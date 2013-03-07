@@ -1,1 +1,5 @@
 flickr.key.txt
+TagNet/tag_popular_test.pyc
+TagNet/wnet_tag_topics.pyc
+TagNet/count_bigram_flickr.pyc
+TagNet/imgtags.pyc

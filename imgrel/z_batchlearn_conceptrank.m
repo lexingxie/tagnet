@@ -22,3 +22,6 @@ for i = 1 : length(synset_list)
        fprintf(1, ' error analyzing %s\n!', in_mat_name);
     end
 end
+%    save(fullfile(exp_home, out_mat_name), 'GW', 'tag_list', 'cn4', 'cn_new', 'cn5');
+%end
+

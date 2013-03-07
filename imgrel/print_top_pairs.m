@@ -37,7 +37,7 @@ for i = 1 : topK
         statustr = '(-)' ;
     end
     %fprintf(1, '\t %0.4f\t %s %s %s\n', score, tag_list(gi(i),:), tag_list(gj(i), :), statustr) ;
-    fprintf(1, '\t %0.4f\t %s, %s %s\n', score, tag_list{gi(i)}, tag_list{gj(i)}, statustr) ;
+    fprintf(1, '\t %3.3f\t %s, %s %s\n', score, tag_list{gi(i)}, tag_list{gj(i)}, statustr) ;
 end
 
 disp('')

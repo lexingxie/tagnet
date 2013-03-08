@@ -80,7 +80,7 @@ id_train = find(R(:));
 % micro-AP
 id_test = find(Rt(:));    
 Re = X'*U'*V*Y;
-p_all = compute_perf(Re(id_test), 1.*full(Rt(id_test)), 'store_raw_pr', 2);
+p_all = compute_perf(Re(id_test), 1.*full(Rt(id_test)==.5), 'store_raw_pr', 2);
 
 fprintf(1, '%s micro-AP on %d test pairs: %0.4f, prior %0.4f\n', ...
     datestr(now,31), length(id_test), p_all.ap, p_all.prior );

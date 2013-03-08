@@ -73,14 +73,15 @@ elseif ntag_collab_f>0 && ntag_collab_f<1
     jpos = find(R(:)> 0);    jpos = vecshuf(jpos);  np = length(jpos);
     jneg = find(R(:)==0);    jneg = vecshuf(jneg);  nn = length(jneg);
     sp = floor(ntag_collab_f * np);
-    sn = min(round(nn/2), 8*sp); 
-    train_ind = sort([jpos(1:sp), jneg(1:sn)]);
-    test_ind = setdiff(1:length(R(:)), train_ind);
+    sn = min(round(nn/2), 8*sp);
+    train_ind = sort([jpos(1:sp); jneg(1:sn)]);
+    test_ind  = setdiff(1:length(R(:)), train_ind);
     
     R(train_ind) = R(train_ind) - .5;
     R(test_ind) = 0;
     Rt(test_ind) = Rt(test_ind) - .5;
     Rt(train_ind) = 0;
+    
 end
 id_train = find(R(:));
 id_test = find(Rt(:));

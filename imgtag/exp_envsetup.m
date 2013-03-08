@@ -10,15 +10,14 @@ dbstop if error
 
 [~,hostn] = system('hostname');
 hostn = deblank(hostn);
+% data dir pointing to "nuswide", with "db2" and "concept..." in the same parent dir
 if strcmp(hostn, 'kinross') || strcmp(hostn, 'koves') || strcmp(hostn, 'infib2') || strcmp(hostn, 'infib1')
     data_dir = '/home/users/xlx/vault-xlx/imgnet-flickr/nuswide2';
 elseif strcmp(hostn, 'cantabile')
     data_dir = '/home/xlx/data/imgnet-flickr/nuswide2';
 elseif strcmp(hostn, 'xuming-UbuntuBox');
     data_dir = '/home/xlx/proj/imgnet-flickr/nuswide2';
-elseif strcmp(hostn, 'xuming-UbuntuBox');  % change to point to "nuswide", with "db2" and "concept..." in the same parent dir
-    data_dir = '/home/xhe/Dropbox ... ';
-else % mac os
+else % mac os, clavier
     data_dir = '/Users/xlx/Documents/proj/imgnet-flickr/nuswide';
 end
 

@@ -1,13 +1,6 @@
 
 function eval_Test_icr(Y_mat, cat_or_add, num_data_sample, ntag_collab_f, K)
 
-[~, ystr, ~] = fileparts(Y_mat);
-
-eval_str = ['eval_Test' ystr '_' cat_or_add '_cf' num2str(ntag_collab_f) '_'] ;
-
-exp_envsetup
-exp_setparams
-
 if nargin < 3
     num_data_sample = inf;
 end
@@ -21,6 +14,14 @@ if nargin < 5
 end
 
 
+[~, ystr, ~] = fileparts(Y_mat);
+
+eval_str = ['eval_Test' ystr '_' cat_or_add '_cf' num2str(ntag_collab_f) '_'] ;
+
+exp_envsetup
+exp_setparams
+
+
 % if use_norm
 %     Ycache_mat = fullfile(data_dir, 'Y_CN5_prnorm.mat');
 % else
@@ -32,14 +33,9 @@ load(Ycache_mat, 'Y', 'Y5p', 'Yadd') %, 'Y5g', 'Yadg');
 switch lower(cat_or_add)
     case 'cat'
         Y = [Y(1:NUMV, :); Y5p(1:NUMV, :)] ;
-    case 'gcat'
-        Y = [Y(1:NUMV, :); Y5g(1:NUMV, :)] ;
     case 'add'
         % add features
         Y = Yadd(1:NUMV, :);
-    case 'gadd'
-        % add graph features
-        Y = Yadg(1:NUMV, :);
     case 'none'
         Y = Y5p(1:NUMV, :) ;
     case 'base'

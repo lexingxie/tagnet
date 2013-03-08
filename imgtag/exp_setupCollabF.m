@@ -81,7 +81,8 @@ elseif ntag_collab_f>0 && ntag_collab_f<1
     R(test_ind) = 0;
     Rt(test_ind) = Rt(test_ind) - .5;
     Rt(train_ind) = 0;
-    
+
+
 end
 id_train = find(R(:));
 id_test = find(Rt(:));

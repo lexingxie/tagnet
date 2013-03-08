@@ -74,7 +74,7 @@ for k = 1 : length(synset_list)
         
         fprintf(1, '%s processed %d synsets, %d of %d concepts covered \n', datestr(now,31), syn_cnt, jz, nw);
         
-        rperf = eval_conceptrank(CN_new, W, CN4, 'prec_depth', prec_depth, 'nrounds', 1, 'tau', 0, 'verbose', 0) ; 
+        rperf = eval_conceptrank(CN_new, W, CN4, 'prec_depth', prec_depth, 'nrounds', 1, 'tau', 0, 'verbose', 0) ;
         fprintf(1, '%s W  num-rel %d, \tprior: %0.4f, \tmax-recall: %0.4f, \tprior-covered: %0.4f \n', ...
             datestr(now,31), rperf.npos, rperf.prior, rperf.max_recall, rperf.r_prior);
         fprintf(1, '%s W  \tAP: %0.4f, \tF1: %0.4f, \tP@%d: %0.4f\n', ...

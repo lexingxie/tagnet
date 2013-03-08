@@ -54,7 +54,7 @@ Rt = imglab(idx, :); % test set for the collab filtering validation
 X = imgfeat(idx, :)';
 
 % now sample some training tags per image
-if ntag_collab_f < COLLAB_PREC_D
+if ntag_collab_f>=1 && ntag_collab_f < COLLAB_PREC_D
     for i = 1 : length(idx)
         jpos = find(R(i, :)>0); jneg = find(R(i, :)==0);
         jpos = vecshuf(jpos);   jneg = vecshuf(jneg); 
@@ -67,18 +67,34 @@ if ntag_collab_f < COLLAB_PREC_D
         Rt(i, test_ind) = Rt(i, test_ind) - .5;
         Rt(i, train_ind) = 0;
     end
+    
+elseif ntag_collab_f>0 && ntag_collab_f<1
+    % globally sample a fraction of the tags
+    jpos = find(R(:)> 0);    jpos = vecshuf(jpos);  np = length(jpos);
+    jneg = find(R(:)==0);    jneg = vecshuf(jneg);  nn = length(jneg);
+    sp = floor(ntag_collab_f * np);
+    sn = min(round(nn/2), 8*sp); 
+    train_ind = sort([jpos(1:sp), jneg(1:sn)]);
+    test_ind = setdiff(1:length(R(:)), train_ind);
+    
+    R(train_ind) = R(train_ind) - .5;
+    R(test_ind) = 0;
+    Rt(test_ind) = Rt(test_ind) - .5;
+    Rt(train_ind) = 0;
 end
-
+id_train = find(R(:));
+id_test = find(Rt(:));
+    
 whos X U V R Y
 
 %% learn the model
 fprintf('\n\n=========== K=%d, alpha=%f, num-v=%d ==============\n\n', K, alph, size(Y,1));
-id_train = find(R(:));
+
 [U, V] = matchbox(R, X, Y, alph, 'indR', id_train, 'k', K, 'max_iter', max_iter, 'solver', 'lbfgs');
 
 %% evaluate
 % micro-AP
-id_test = find(Rt(:));    
+ 
 Re = X'*U'*V*Y;
 p_all = compute_perf(Re(id_test), 1.*full(Rt(id_test)==.5), 'store_raw_pr', 2);
 

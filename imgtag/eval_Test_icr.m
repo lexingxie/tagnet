@@ -66,7 +66,7 @@ if ntag_collab_f==0 % regular tagging eval
     
     exp_runTest
 else % setup training / test to measure precision@5, with at most ntag_collab_f tags in training
-    COLLAB_PREC_D = 5 + ntag_collab_f ;
+    COLLAB_PREC_D = floor(5 + ntag_collab_f);
     
     exp_setupCollabF
 end

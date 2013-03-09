@@ -43,7 +43,7 @@ for i = 1 : nw
         cnt(1) = cnt(1) + 1;
         semilogx(npos(i)*[1 1], pd(i,:), 'x-'); 
         
-        if npos(i)>10 && npos(i)<=20 && pd(i,2)>=0.6 && pd(i,2)<=0.8 && diff(pd(i,:))>=.2
+        if npos(i)>10 && npos(i)<=25 && pd(i,2)>=0.6 && pd(i,2)<=0.8 && diff(pd(i,:))>=.3
             fprintf(1, '\n\n %d\t %0.2f\t%0.2f\n', npos(i), pd(i,:) );
             print_icr_rel(W1, CN4, CN5, mp1.idx(i), all_t, 10, false) ;
             print_icr_rel(W2, CN4, CN5, mp1.idx(i), all_t, 10, false) ;

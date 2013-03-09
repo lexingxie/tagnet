@@ -10,7 +10,7 @@ jnz = find(sum(rankmat, 1) ~= 0);  % indexes of covered concepts
 
 switch eval_mode
     case 'macro'
-        include_flag = true(n) & ~exclude_mat>0;
+        include_flag = (~eye(n)) & exclude_mat<eps('single');
         rperf.idx = jnz ;
         rperf.ap = jnz ;
         rperf.f1 = jnz ;

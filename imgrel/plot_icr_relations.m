@@ -28,7 +28,7 @@ clear mperf W
 %print_top_pairs(triu(W, 1), all_t, 20, triu(CN4, 1), triu(CN5, 1), 'icr', mperf.idx(ii(2)) );
 nw = length(mp1.idx);
 
-w1 = all_t(mp1.idx); 
+w1 = all_t(mp1.idx);
 pd = mp1.p_at_d'*[1 1] ;
 npos = mp1.npos;
 
@@ -37,10 +37,10 @@ cnt = [0 0 0]; % increase, decrese, no-change
 print_cnt = 0;
 for i = 1 : nw
     ii = find(mp2.idx == mp1.idx(i) );
-    pd(i, 2) = mp2.p_at_d(ii); 
+    pd(i, 2) = mp2.p_at_d(ii);
     if pd(i, 2) > pd(i, 1)
         cnt(1) = cnt(1) + 1;
-        semilogx(npos(i)*[1 1], pd(i,:), 'x-'); 
+        semilogx(npos(i)*[1 1], pd(i,:), 'x-');
         
         if npos(i)>10 && npos(i)<=25 && pd(i,2)>=0.6 && pd(i,2)<=0.8 && diff(pd(i,:))>=.3
             fprintf(1, '\n\n %d\t %0.2f\t%0.2f\n', npos(i), pd(i,:) );

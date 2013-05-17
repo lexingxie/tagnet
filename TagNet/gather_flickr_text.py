@@ -141,7 +141,7 @@ def flickr_get_txt(argv):
                 # write the output    
                 if len(sent_feat):
                     cfh.write("%s\t%s\n" % (imid, ",".join(tt)))
-                    dfh.write("%s\t%s\n" % (imid, txt_nolink) )                    
+                    dfh.write("%s\t%s\n" % (imid, txt_nolink.replace("\n", " ")) )                    
                     tfh.write("%s\t%s\n" % (imid, " ".join(map(lambda t:"%s:%d"%(t[0],t[1]), \
                                                            txt_cnter.iteritems()) ) ) )
                     for i, sf in enumerate(sent_feat):
@@ -149,8 +149,9 @@ def flickr_get_txt(argv):
                         for k, v in sf.iteritems():
                             sf_str += ( " " + "%s:%d" % (prepo_print[k], v) )
                         sfh.write("%s_%02d\t%s\n" % (imid, i, sf_str) )
-                        for wp in wpairs:
-                            pfh.write("%s_%02d\t%s %s\n" % (imid, i, wp[0], wp[1]) )
+                        wp = wpairs[i]
+                        for tp in wp:
+                            pfh.write("%s_%02d\t%s %s\n" % (imid, i, tp[0], tp[1]) )
                 else:
                     emtcnt += 1 # # of json with either caption or tag empty
                     
@@ -189,9 +190,9 @@ def proc_caption(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
         if cnt < 3:
             return([], "", {}, txt_nolink)
         # else
-        sent_feat = []
-        wpairs = []
-        for st in sents:
+        sent_feat = []  
+        wpairs = []      
+        for k, st in enumerate(sents):
             cur_str = st;
             # tokenize and filter string, set wpairs
             tkn = nltk.word_tokenize(cur_str)
@@ -200,12 +201,16 @@ def proc_caption(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
             tt = filter(lambda s: len(s)>1, tt)
             tt = filter(lambda s: s in vocab, tt)
             tt = list(set(tt)) # unique tags in vocab
+            
+            wpairs.append( [] )
+            wpairs[k] = [(" ", "")]
             for i in range(len(tt)):
                 for j in range(i):
                     if tt[i]<tt[j]:
-                        wpairs += [tt[i], tt[j]]
+                        wpairs[k] += [(tt[i], tt[j])]
                     else:
-                        wpairs += [tt[j], tt[i]]
+                        wpairs[k] += [(tt[j], tt[i])]
+            wpairs[k].pop(0)
             
             cur_feat = {}
             for p in prepo_list:

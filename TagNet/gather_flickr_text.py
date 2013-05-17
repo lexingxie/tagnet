@@ -5,6 +5,8 @@ import sqlite3
 import codecs
 import nltk
 import re
+import itertools
+from collections import Counter
 from bs4 import BeautifulSoup
 
 #import pickle
@@ -14,6 +16,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from optparse import OptionParser
 
+sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
 
 """
     walk a dir of flickr json files
@@ -52,24 +55,39 @@ def flickr_get_txt(argv):
     
     if opts.preposition_list: #additional out-of-dictionary words 
         prepo_list = open(opts.preposition_list, 'rt').read().strip().split("\n")
+        prepo_list = prepo_list[::-1]
         pp = r"|".join(prepo_list)
         prepo_re = re.compile(r'\b'+pp+'\b', re.IGNORECASE)
         print "read %d prepositions: %s" %(len(prepo_list), pp)
     else:
         prepo_list = []
         prepo_re = None
-
+    
+    prepo_print = {}
+    for p in prepo_list:
+        prepo_print[p] = "_".join(p.split())
+    
     print os.path.split(opts.in_dir.strip(os.sep)) 
     __, dir_name = os.path.split(opts.in_dir.strip(os.sep))
     #out_file = os.path.join(opts.out_dir, dir_name+".bigram")
     #uni_file = os.path.join(opts.out_dir, dir_name+".unigram")
-    cache_file = os.path.join(opts.out_dir, dir_name+".tags")
-    desc_file  = os.path.join(opts.out_dir, dir_name+".caption")
     if not os.path.exists(opts.out_dir):
         os.makedirs(opts.out_dir)
+
+    tags_file = os.path.join(opts.out_dir, dir_name+".tags")
+    desc_file  = os.path.join(opts.out_dir, dir_name+".caption")
+    psnt_file  = os.path.join(opts.out_dir, dir_name+".pair-sent")
+    fsnt_file  = os.path.join(opts.out_dir, dir_name+".feat-sent")
+    ftxt_file  = os.path.join(opts.out_dir, dir_name+".feat-txt")
+
+    cfh = codecs.open(tags_file, encoding='utf-8', mode='wt')
+    dfh = codecs.open(desc_file, encoding='utf-8', mode='wt')
+    pfh = codecs.open(psnt_file, encoding='utf-8', mode='wt')
+    sfh = codecs.open(fsnt_file, encoding='utf-8', mode='wt')
+    tfh = codecs.open(ftxt_file, encoding='utf-8', mode='wt')
     
     tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-    print "%s processing dir %s" % (tt, opts.in_dir)
+    print "%s processing dir %s \n" % (tt, opts.in_dir)
     
     """ get dictionary from SQlite """
     conn = sqlite3.connect(opts.db_file)
@@ -78,8 +96,7 @@ def flickr_get_txt(argv):
     errcnt = 0
     emtcnt = 0
 
-    cfh = codecs.open(cache_file, encoding='utf-8', mode='wt')
-    dfh = codecs.open(desc_file, encoding='utf-8', mode='wt')
+    
     for cp, __cd, fn in os.walk(opts.in_dir):         # UnusedVariable
         jn = filter(lambda s: s.find(".json")>0, fn)
         for j in jn:
@@ -113,16 +130,27 @@ def flickr_get_txt(argv):
                 if in_desc:
                     """  clean caption
                     """                    
-                    cc = proc_caption(in_desc, prepo_re, vocab, cursor, addl_vocab)
-                    print in_desc
-                    print ">> " + cc
-                    print ""
-                else:
-                    cc = ""
+                    wpairs, sent_feat, txt_cnter, txt_nolink = proc_caption(in_desc, prepo_list, vocab, cursor, addl_vocab)
+                    #print in_desc
+                    #print txt_nolink
                     
-                if len(tt) or len(cc):
+                else:
+                    txt_nolink = ""
+                    sent_feat = []
+                
+                # write the output    
+                if len(sent_feat):
                     cfh.write("%s\t%s\n" % (imid, ",".join(tt)))
-                    dfh.write("%s\t%s\n" % (imid, cc) )
+                    dfh.write("%s\t%s\n" % (imid, txt_nolink) )                    
+                    tfh.write("%s\t%s\n" % (imid, " ".join(map(lambda t:"%s:%d"%(t[0],t[1]), \
+                                                           txt_cnter.iteritems()) ) ) )
+                    for i, sf in enumerate(sent_feat):
+                        sf_str = ''
+                        for k, v in sf.iteritems():
+                            sf_str += ( " " + "%s:%d" % (prepo_print[k], v) )
+                        sfh.write("%s_%02d\t%s\n" % (imid, i, sf_str) )
+                        for wp in wpairs:
+                            pfh.write("%s_%02d\t%s %s\n" % (imid, i, wp[0], wp[1]) )
                 else:
                     emtcnt += 1 # # of json with either caption or tag empty
                     
@@ -135,38 +163,62 @@ def flickr_get_txt(argv):
     conn.close()
     
     tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-    print "%s: %d docs with tags, %d empty, %d failed" % (tt, jcnt, emtcnt, errcnt)
+    print "%s: %d docs with text, %d empty, %d failed" % (tt, jcnt, emtcnt, errcnt)
     #write_unigram_file(uni_dict, uni_file)
     #write_bigram_file(bg_dict, out_file)
     
     # DONE
 
 
-def proc_caption(in_txt, prepo_re=None, vocab=[], cursor=None, addl_vocab=[]):
+def proc_caption(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
     soup = BeautifulSoup(in_txt)
     txt_nolink = soup.get_text()
+    #print txt_nolink
     
+    sents = sent_tokenizer.tokenize(txt_nolink)
     tokens = nltk.word_tokenize(txt_nolink)
+    
     if len(tokens) >= 3:
-        #if prepo_re:
-        #    m = prepo_re.match(in_txt)
-        #    if not m:
-        #        cc = " "
-        #        return
-        
         tt = map(lambda s: norm_tag(s.lower(), cursor, addl_vocab=addl_vocab,filter_stopword=1), tokens)
         tt = filter(lambda s: len(s)>1, tt)
-        tt = list(set(tt)) #unique
-        cnt = reduce(lambda x, t: x+1.*(t in vocab), tt, 0)
-        print cnt, tt
-        if cnt < 2:
-            cc = " "
-        else:
-            cc = " ".join( filter(lambda s: s=='I' or len(s)>1, tokens) )
+        txt_cnter = Counter()
+        for word in tt:
+            txt_cnter[word] += 1
+        
+        cnt = reduce(lambda x, t: x+1.*(t in vocab), list(set(tt)), 0)
+        if cnt < 3:
+            return([], "", {}, txt_nolink)
+        # else
+        sent_feat = []
+        wpairs = []
+        for st in sents:
+            cur_str = st;
+            # tokenize and filter string, set wpairs
+            tkn = nltk.word_tokenize(cur_str)
+            tt = map(lambda s: \
+                     norm_tag(s.lower(), cursor, addl_vocab=addl_vocab,filter_stopword=1), tkn)
+            tt = filter(lambda s: len(s)>1, tt)
+            tt = filter(lambda s: s in vocab, tt)
+            tt = list(set(tt)) # unique tags in vocab
+            for i in range(len(tt)):
+                for j in range(i):
+                    if tt[i]<tt[j]:
+                        wpairs += [tt[i], tt[j]]
+                    else:
+                        wpairs += [tt[j], tt[i]]
             
+            cur_feat = {}
+            for p in prepo_list:
+                num = cur_str.count(p)
+                if num :
+                    cur_feat[p] = num
+                    cur_str.replace(p, "")
+            if cur_feat:
+                sent_feat += [cur_feat]
+            
+        return wpairs, sent_feat, txt_cnter, txt_nolink
     else:
-        cc = ' '
-    return cc
+        return([], "", [], {})
 
     
 def norm_tag(in_tag, cur, addl_vocab=[],filter_stopword=0):

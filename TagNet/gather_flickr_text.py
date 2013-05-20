@@ -78,8 +78,8 @@ def flickr_get_txt(argv):
     tags_file = os.path.join(opts.out_dir, dir_name+".tags")
     desc_file  = os.path.join(opts.out_dir, dir_name+".sentence")
     #psnt_file  = os.path.join(opts.out_dir, dir_name+".pair-sent")
-    fsnt_file  = os.path.join(opts.out_dir, dir_name+".feat-sent")
-    ftxt_file  = os.path.join(opts.out_dir, dir_name+".feat-txt")
+    fsnt_file  = os.path.join(opts.out_dir, dir_name+".sent-feat")
+    ftxt_file  = os.path.join(opts.out_dir, dir_name+".txt-feat")
 
     cfh = codecs.open(tags_file, encoding='utf-8', mode='wt')
     dfh = codecs.open(desc_file, encoding='utf-8', mode='wt')

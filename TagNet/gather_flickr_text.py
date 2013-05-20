@@ -5,10 +5,11 @@ import sqlite3
 import codecs
 import nltk
 import re
-import itertools
+import string
 from collections import Counter
 from bs4 import BeautifulSoup
 
+#import itertools
 #import pickle
 #from glob import glob
 #from operator import itemgetter
@@ -75,7 +76,7 @@ def flickr_get_txt(argv):
         os.makedirs(opts.out_dir)
 
     tags_file = os.path.join(opts.out_dir, dir_name+".tags")
-    desc_file  = os.path.join(opts.out_dir, dir_name+".caption")
+    desc_file  = os.path.join(opts.out_dir, dir_name+".sentence")
     psnt_file  = os.path.join(opts.out_dir, dir_name+".pair-sent")
     fsnt_file  = os.path.join(opts.out_dir, dir_name+".feat-sent")
     ftxt_file  = os.path.join(opts.out_dir, dir_name+".feat-txt")
@@ -95,7 +96,7 @@ def flickr_get_txt(argv):
     jcnt = 0
     errcnt = 0
     emtcnt = 0
-
+    
     
     for cp, __cd, fn in os.walk(opts.in_dir):         # UnusedVariable
         jn = filter(lambda s: s.find(".json")>0, fn)
@@ -130,7 +131,7 @@ def flickr_get_txt(argv):
                 if in_desc:
                     """  clean caption
                     """                    
-                    wpairs, sent_feat, txt_cnter, txt_nolink = proc_caption(in_desc, prepo_list, vocab, cursor, addl_vocab)
+                    wpairs, sent_feat, txt_cnter, sents = proc_caption(in_desc, prepo_list, vocab, cursor, addl_vocab)
                     #print in_desc
                     #print txt_nolink
                     
@@ -140,10 +141,16 @@ def flickr_get_txt(argv):
                 
                 # write the output    
                 if len(sent_feat):
+                    # tags
                     cfh.write("%s\t%s\n" % (imid, ",".join(tt)))
-                    dfh.write("%s\t%s\n" % (imid, txt_nolink.replace("\n", " ")) )                    
+                    # boW overall
                     tfh.write("%s\t%s\n" % (imid, " ".join(map(lambda t:"%s:%d"%(t[0],t[1]), \
                                                            txt_cnter.iteritems()) ) ) )
+                    # sentences
+                    for i, sn in enumerate(sents):
+                        dfh.write("%s_%02d\t%s\n" % (imid, i, sn) )
+                      
+                    # setence features
                     for i, sf in enumerate(sent_feat):
                         sf_str = ''
                         for k, v in sf.iteritems():
@@ -170,25 +177,25 @@ def flickr_get_txt(argv):
     
     # DONE
 
-
+"""
+    upgraded version of proc_caption above,
+    now output sentence text for further extracting FrameNet features
+"""  
 def proc_caption(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
+    
     soup = BeautifulSoup(in_txt)
-    txt_nolink = soup.get_text()
-    #print txt_nolink
+    txt_nolink = soup.get_text()  # does better than NLTK
+    #txt_nolink = nltk.clean_html(in_txt) 
+    txt_nolink = txt_nolink.replace("\n", " ")
+    txt_ascii = filter(lambda s: s in string.printable, txt_nolink)
     
-    sents = sent_tokenizer.tokenize(txt_nolink)
-    tokens = nltk.word_tokenize(txt_nolink)
+    sents = sent_tokenizer.tokenize(txt_ascii)
+    #tokens = nltk.word_tokenize(txt_ascii)
     
-    if len(tokens) >= 3:
-        tt = map(lambda s: norm_tag(s.lower(), cursor, addl_vocab=addl_vocab,filter_stopword=1), tokens)
-        tt = filter(lambda s: len(s)>1, tt)
+    if len(txt_ascii.split()) >= 3:
+        # counter for all word counts
         txt_cnter = Counter()
-        for word in tt:
-            txt_cnter[word] += 1
         
-        cnt = reduce(lambda x, t: x+1.*(t in vocab), list(set(tt)), 0)
-        if cnt < 3:
-            return([], "", {}, txt_nolink)
         # else
         sent_feat = []  
         wpairs = []      
@@ -198,18 +205,20 @@ def proc_caption(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
             tkn = nltk.word_tokenize(cur_str)
             tt = map(lambda s: \
                      norm_tag(s.lower(), cursor, addl_vocab=addl_vocab,filter_stopword=1), tkn)
-            tt = filter(lambda s: len(s)>1, tt)
-            tt = filter(lambda s: s in vocab, tt)
-            tt = list(set(tt)) # unique tags in vocab
             
             wpairs.append( [] )
             wpairs[k] = [(" ", "")]
-            for i in range(len(tt)):
-                for j in range(i):
-                    if tt[i]<tt[j]:
-                        wpairs[k] += [(tt[i], tt[j])]
-                    else:
-                        wpairs[k] += [(tt[j], tt[i])]
+            for i, w in enumerate(tt):
+                if len(w) and w in vocab:
+                    txt_cnter[w] += 1
+                    
+                    for j in range(i):
+                        u = tt[j]
+                        if len(u) and u in vocab:
+                            if w < u:
+                                wpairs[k] += [(w, u)]
+                            else:
+                                wpairs[k] += [(u, w)]
             wpairs[k].pop(0)
             
             cur_feat = {}
@@ -221,9 +230,10 @@ def proc_caption(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
             if cur_feat:
                 sent_feat += [cur_feat]
             
-        return wpairs, sent_feat, txt_cnter, txt_nolink
+        return wpairs, sent_feat, txt_cnter, sents
     else:
         return([], "", [], {})
+
 
     
 def norm_tag(in_tag, cur, addl_vocab=[],filter_stopword=0):

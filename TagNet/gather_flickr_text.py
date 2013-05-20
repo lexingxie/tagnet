@@ -172,8 +172,6 @@ def flickr_get_txt(argv):
     
     tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
     print "%s: %d docs with text, %d empty, %d failed" % (tt, jcnt, emtcnt, errcnt)
-    #write_unigram_file(uni_dict, uni_file)
-    #write_bigram_file(bg_dict, out_file)
     
     # DONE
 
@@ -187,6 +185,7 @@ def proc_caption(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
     txt_nolink = soup.get_text()  # does better than NLTK
     #txt_nolink = nltk.clean_html(in_txt) 
     txt_nolink = txt_nolink.replace("\n", " ")
+    txt_nolink = txt_nolink.replace("\r", " ")
     txt_ascii = filter(lambda s: s in string.printable, txt_nolink)
     
     sents = sent_tokenizer.tokenize(txt_ascii)

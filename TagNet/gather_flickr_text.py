@@ -77,13 +77,13 @@ def flickr_get_txt(argv):
 
     tags_file = os.path.join(opts.out_dir, dir_name+".tags")
     desc_file  = os.path.join(opts.out_dir, dir_name+".sentence")
-    psnt_file  = os.path.join(opts.out_dir, dir_name+".pair-sent")
+    #psnt_file  = os.path.join(opts.out_dir, dir_name+".pair-sent")
     fsnt_file  = os.path.join(opts.out_dir, dir_name+".feat-sent")
     ftxt_file  = os.path.join(opts.out_dir, dir_name+".feat-txt")
 
     cfh = codecs.open(tags_file, encoding='utf-8', mode='wt')
     dfh = codecs.open(desc_file, encoding='utf-8', mode='wt')
-    pfh = codecs.open(psnt_file, encoding='utf-8', mode='wt')
+    #pfh = codecs.open(psnt_file, encoding='utf-8', mode='wt')
     sfh = codecs.open(fsnt_file, encoding='utf-8', mode='wt')
     tfh = codecs.open(ftxt_file, encoding='utf-8', mode='wt')
     
@@ -117,6 +117,7 @@ def flickr_get_txt(argv):
                 tag_raw = map(lambda s:s["_content"], jinfo["photo"]["tags"]["tag"])
                 in_ttl = jinfo["photo"]["title"]["_content"]
                 in_desc = jinfo["photo"]["description"]["_content"]
+                in_txt = " . ".join([in_ttl, in_desc])
                 imid,__ = os.path.splitext(j)
                 
                 if tag_raw:             
@@ -131,12 +132,11 @@ def flickr_get_txt(argv):
                 if in_desc:
                     """  clean caption
                     """                    
-                    wpairs, sent_feat, txt_cnter, sents = proc_caption(in_desc, prepo_list, vocab, cursor, addl_vocab)
-                    #print in_desc
-                    #print txt_nolink
+                    sents, sent_feat, txt_cnter = caption2sentence(in_txt, prepo_list, vocab, cursor, addl_vocab)
+                    #  wpairs, sent_feat, txt_cnter, sents = proc_caption(in_desc, prepo_list, vocab, cursor, addl_vocab)
                     
                 else:
-                    txt_nolink = ""
+                    sents = []
                     sent_feat = []
                 
                 # write the output    
@@ -150,15 +150,17 @@ def flickr_get_txt(argv):
                     for i, sn in enumerate(sents):
                         dfh.write("%s_%02d\t%s\n" % (imid, i, sn) )
                       
-                    # setence features
-                    for i, sf in enumerate(sent_feat):
+                        # setence features
+                        sf = sent_feat[i]
                         sf_str = ''
                         for k, v in sf.iteritems():
                             sf_str += ( " " + "%s:%d" % (prepo_print[k], v) )
                         sfh.write("%s_%02d\t%s\n" % (imid, i, sf_str) )
-                        wp = wpairs[i]
-                        for tp in wp:
-                            pfh.write("%s_%02d\t%s %s\n" % (imid, i, tp[0], tp[1]) )
+                        """
+                            wp = wpairs[i]
+                            for tp in wp:
+                                pfh.write("%s_%02d\t%s %s\n" % (imid, i, tp[0], tp[1]) )
+                        """
                 else:
                     emtcnt += 1 # # of json with either caption or tag empty
                     
@@ -174,6 +176,54 @@ def flickr_get_txt(argv):
     print "%s: %d docs with text, %d empty, %d failed" % (tt, jcnt, emtcnt, errcnt)
     
     # DONE
+
+"""
+    clean up caption (de-html, get rid of non ascii chars, etc)
+    break into sentences, and compute bag-of-words (all) and bag-of-propositions (sentence)
+"""  
+def caption2sentence(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]):
+    
+    soup = BeautifulSoup(in_txt)
+    txt_nolink = soup.get_text()  # does better than NLTK
+    #txt_nolink = nltk.clean_html(in_txt) 
+    txt_nolink = txt_nolink.replace("\n", " ")
+    txt_nolink = txt_nolink.replace("\r", " ")
+    txt_ascii = filter(lambda s: s in string.printable, txt_nolink)
+    
+    sents = sent_tokenizer.tokenize(txt_ascii)
+    
+    if len(txt_ascii.split()) >= 3:
+        # counter for all word counts
+        txt_cnter = Counter()
+        
+        # else
+        sent_feat = []  
+        #for k, st in enumerate(sents):
+        for st in sents:
+            cur_str = st;
+            # tokenize and filter string, set wpairs
+            tkn = nltk.word_tokenize(cur_str)
+            tt = map(lambda s: \
+                     norm_tag(s.lower(), cursor, addl_vocab=addl_vocab,filter_stopword=1), tkn)
+            
+            #for i, w in enumerate(tt):
+            for w in tt:
+                if len(w) and w in vocab:
+                    txt_cnter[w] += 1
+                    
+            cur_feat = {}
+            for p in prepo_list:
+                num = cur_str.count(p)
+                if num :
+                    cur_feat[p] = num
+                    cur_str.replace(p, "")
+            
+            sent_feat += [cur_feat]
+            
+        return sents, sent_feat, txt_cnter
+    else:
+        return([], [], {})
+
 
 """
     upgraded version of proc_caption above,

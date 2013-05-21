@@ -18,6 +18,7 @@ from datetime import datetime
 from optparse import OptionParser
 
 sent_tokenizer=nltk.data.load('tokenizers/punkt/english.pickle')
+SENT_TH = 1000
 
 """
     walk a dir of flickr json files
@@ -59,7 +60,7 @@ def flickr_get_txt(argv):
         prepo_list = prepo_list[::-1]
         pp = r"|".join(prepo_list)
         prepo_re = re.compile(r'\b'+pp+'\b', re.IGNORECASE)
-        print "read %d prepositions: %s" %(len(prepo_list), pp)
+        print "read %d prepositions: %s" % (len(prepo_list), pp)
     else:
         prepo_list = []
         prepo_re = None
@@ -177,6 +178,22 @@ def flickr_get_txt(argv):
     
     # DONE
 
+def trucate_sentence(orig_sent, TH=1000):
+    """
+        truncate insanely long sentences to its first TH (1000) chars
+        SEMAFOR seem to have problems with really long stuff
+        plus there's little point looking at captions that are just too long
+    """
+    wlist = orig_sent.split()
+    curlen = 0
+    for w in wlist:
+        curlen += len(w)+1
+        if curlen>TH:
+            break
+    
+    trun_sent = orig_sent[:curlen]
+    return trun_sent
+
 """
     clean up caption (de-html, get rid of non ascii chars, etc)
     break into sentences, and compute bag-of-words (all) and bag-of-propositions (sentence)
@@ -200,8 +217,11 @@ def caption2sentence(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]
         sents = filter(lambda st: len(set(st).intersection(list(string.ascii_letters)) ), sents)
         sent_feat = []  
         #for k, st in enumerate(sents):
-        for st in sents:
-            cur_str = st;
+        for j, st in enumerate(sents):
+            if len(sents) > SENT_TH:
+                sents[j] = trucate_sentence(st, SENT_TH)
+            
+            cur_str = sents[j];
             # tokenize and filter string, set wpairs
             tkn = nltk.word_tokenize(cur_str)
             tt = map(lambda s: \

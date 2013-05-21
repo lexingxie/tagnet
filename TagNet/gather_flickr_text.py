@@ -187,11 +187,12 @@ def trucate_sentence(orig_sent, TH=1000):
     wlist = orig_sent.split()
     curlen = 0
     for w in wlist:
-        curlen += len(w)+1
+        curlen += ( len(w)+1 )
         if curlen>TH:
             break
     
-    trun_sent = orig_sent[:curlen]
+    trun_sent = " " 
+    trun_sent += orig_sent[:curlen]
     return trun_sent
 
 """
@@ -220,6 +221,7 @@ def caption2sentence(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]
         for j, st in enumerate(sents):
             if len(sents) > SENT_TH:
                 sents[j] = trucate_sentence(st, SENT_TH)
+                print "  truncate-sentence: from %d chars to %d chars" % (len(st), len(sents[j]))
             
             cur_str = sents[j];
             # tokenize and filter string, set wpairs

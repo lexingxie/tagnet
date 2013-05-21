@@ -196,7 +196,8 @@ def caption2sentence(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]
         # counter for all word counts
         txt_cnter = Counter()
         
-        # else
+        #filter out sentences without alpha chars
+        sents = filter(lambda s: sum(s.isalpha())>0, sents)
         sent_feat = []  
         #for k, st in enumerate(sents):
         for st in sents:

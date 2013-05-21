@@ -203,7 +203,7 @@ def caption2sentence(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]
     soup = BeautifulSoup(in_txt)
     txt_nolink = soup.get_text()  # does better than NLTK
     #txt_nolink = nltk.clean_html(in_txt) 
-    txt_nolink = txt_nolink.replace("\n", " ")
+    txt_nolink = txt_nolink.replace("\n", " . ") #new line should trigger tokenizer too
     txt_nolink = txt_nolink.replace("\r", " ")
     txt_ascii = filter(lambda s: s in string.printable, txt_nolink)
     

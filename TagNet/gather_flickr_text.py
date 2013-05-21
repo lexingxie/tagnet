@@ -219,7 +219,7 @@ def caption2sentence(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]
         sent_feat = []  
         #for k, st in enumerate(sents):
         for j, st in enumerate(sents):
-            if len(sents) > SENT_TH:
+            if len(st) > SENT_TH:
                 sents[j] = trucate_sentence(st, SENT_TH)
                 print "  truncate-sentence: from %d chars to %d chars" % (len(st), len(sents[j]))
             

@@ -454,10 +454,13 @@ def gather_semafor_features(argv):
         
         # find files like 80.sent.[xx].xml
         xml_files = glob(os.path.join(opts.semafor_output, curn + opts.sent_seg_str + "*.xml")) 
+        print xml_files
+        
         frame_cnt = 0
         sents_cnt = 0
         empty_sent_cnt = 0
         mismatch_cnt = 0
+        
         for semafor_file in xml_files:  # one file of n sentences
             tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
             print "%s processing %s ..." % (tt, semafor_file)

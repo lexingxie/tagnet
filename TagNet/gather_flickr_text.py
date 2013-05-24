@@ -453,7 +453,8 @@ def gather_semafor_features(argv):
         cur_sent = cur_fline[1].strip()
         
         # find files like 80.sent.[xx].xml
-        xml_files = glob(os.path.join(opts.semafor_output, curn + opts.sent_seg_str + "*.xml")) 
+        xml_files = glob(os.path.join(opts.semafor_output, curn + opts.sent_seg_str + "*.xml"))
+        xml_files.sort() 
         print xml_files
         
         frame_cnt = 0

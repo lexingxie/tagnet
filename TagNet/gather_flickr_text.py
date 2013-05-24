@@ -459,6 +459,9 @@ def gather_semafor_features(argv):
         empty_sent_cnt = 0
         mismatch_cnt = 0
         for semafor_file in xml_files:  # one file of n sentences
+            tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            print "%s processing %s ..." % (tt, semafor_file)
+                        
             soup = BeautifulSoup(open(semafor_file,'r').read())
             sentence_list = [c for c in soup.sentences.children]
             sentence_list = filter(lambda ss: type(ss) is bs4_element.Tag, sentence_list)

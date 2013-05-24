@@ -4,14 +4,16 @@ import json
 import sqlite3
 import codecs
 import nltk
-import re
+#import re
 import string
+from glob import glob
 from collections import Counter
 from bs4 import BeautifulSoup
+from bs4 import element as bs4_element# for type checking
 
 #import itertools
 #import pickle
-#from glob import glob
+
 #from operator import itemgetter
 
 from datetime import datetime
@@ -59,11 +61,11 @@ def flickr_get_txt(argv):
         prepo_list = open(opts.preposition_list, 'rt').read().strip().split("\n")
         prepo_list = prepo_list[::-1]
         pp = r"|".join(prepo_list)
-        prepo_re = re.compile(r'\b'+pp+'\b', re.IGNORECASE)
+        #prepo_re = re.compile(r'\b'+pp+'\b', re.IGNORECASE)
         print "read %d prepositions: %s" % (len(prepo_list), pp)
     else:
         prepo_list = []
-        prepo_re = None
+        #prepo_re = None
     
     prepo_print = {}
     for p in prepo_list:
@@ -121,7 +123,7 @@ def flickr_get_txt(argv):
                 in_txt = " . ".join([in_ttl, in_desc])
                 imid,__ = os.path.splitext(j)
                 
-                if tag_raw:             
+                if tag_raw:
                     """    clean tags
                     """
                     tt = map(lambda s: norm_tag(s, cursor, addl_vocab=addl_vocab,filter_stopword=1), tag_raw)
@@ -132,7 +134,7 @@ def flickr_get_txt(argv):
                     
                 if in_desc:
                     """  clean caption
-                    """                    
+                    """
                     sents, sent_feat, txt_cnter = caption2sentence(in_txt, prepo_list, vocab, cursor, addl_vocab)
                     #  wpairs, sent_feat, txt_cnter, sents = proc_caption(in_desc, prepo_list, vocab, cursor, addl_vocab)
                     
@@ -216,7 +218,7 @@ def caption2sentence(in_txt, prepo_list=[], vocab=[], cursor=None, addl_vocab=[]
         
         #filter out sentences without alpha chars
         sents = filter(lambda st: len(set(st).intersection(list(string.ascii_letters)) ), sents)
-        sent_feat = []  
+        sent_feat = []
         #for k, st in enumerate(sents):
         for j, st in enumerate(sents):
             if len(st) > SENT_TH:
@@ -328,6 +330,259 @@ def norm_tag(in_tag, cur, addl_vocab=[],filter_stopword=0):
            
     return out_tag
 
+""" ----- END of process json generate sentence and BoW features """
+
+def adhoc_translate(in_ascii_str):
+    ss_nospace = in_ascii_str.translate(None, " ")
+    ss_nospace = ss_nospace.replace("-LRB-", "(").replace("-RRB-", ")") # various brackets
+    ss_nospace = ss_nospace.replace("-LSB-", "[").replace("-RSB-", "]")  
+    ss_nospace = ss_nospace.replace("-LCB-", "{").replace("-RCB-", "}")  
+    ss_nospace = ss_nospace.replace("``", '"').replace("''", '"') # quotes
+    return ss_nospace
+
+
+def gather_semafor_features(argv):    
+    """
+        parse semafor output that looks like the following
+        output frame-wise features (bag-of-framenet), plus word pairs that are within a frame 
+        
+        <documents>
+        ... 
+        <sentence ID="5">
+              <text>A slightly used Bronica SQai with a Sekonic Studio DeLuxe light meter .</text>
+        ...
+        <annotationset framename="Dimension" id="502">
+         <layers>
+          <layer id="50201" name="Target">
+           <labels>
+            <label end="62" id="5020101" name="Target" start="58">
+            </label>
+           </labels>
+          </layer>
+          <layer id="50202" name="FE">
+           <labels>
+            <label end="62" id="5020201" name="Dimension" start="58">
+            </label>
+            <label end="68" id="5020202" name="Object" start="64">
+            </label>
+           </labels>
+          </layer>
+         </layers>
+        </annotationset>
+        ...
+        </sentence>
+        ... ... 
+    """
+    if len(argv)<2:
+        argv = ['-h']
+    
+    parser = OptionParser(description='parse flickr json files')
+    parser.add_option("-i", "--sentence_dir", dest="sentence_dir", 
+        default='', help="input dir containing sentence files")
+    parser.add_option("-g", "--glob_str", dest="glob_str", 
+        default='*.sentence', help="input file wild card string")
+    parser.add_option("", "--sent_seg_str", dest="sent_seg_str", 
+        default='.sent', help="additional suffix for sentence segment files")
+    parser.add_option("-s", "--semafor_output", dest="semafor_output", 
+        default='', help="input dir containing SEMAFOR xmls")
+    parser.add_option("-o", "--out_dir", dest="out_dir", 
+        default='', help="out dir for semafor features and word pairs")
+    parser.add_option('-d', '--db_file', dest='db_file', 
+        default='dict.db', help='file containing dictionary db')
+    parser.add_option('-v', '--vocab', dest="vocab", default="")
+    parser.add_option('-a', '--addl_vocab', dest="addl_vocab", default="")
+    parser.add_option('-p', '--preposition_list', dest="preposition_list", default="")
+    parser.add_option('-D', '--DEBUG', dest="DEBUG", type='int', default=0)
+    
+    opts, __ = parser.parse_args(argv)
+    
+    if opts.out_dir:
+        out_dir = opts.out_dir
+    else:
+        out_dir = opts.sentence_dir
+    
+    if opts.vocab: #additional out-of-dictionary words 
+        vocab = open(opts.vocab, 'rt').read().strip().split()
+    else:
+        vocab = []
+    
+    if opts.addl_vocab: #additional out-of-dictionary words 
+        addl_vocab = open(opts.addl_vocab, 'rt').read().strip().split()
+    else:
+        addl_vocab = []
+    
+    if opts.preposition_list: #additional out-of-dictionary words 
+        prepo_list = open(opts.preposition_list, 'rt').read().strip().split("\n")
+        prepo_list = prepo_list[::-1]
+        pp = r"|".join(prepo_list)     
+        print "read %d prepositions: %s \n" % (len(prepo_list), pp)
+    else:
+        prepo_list = []
+    
+    prepo_print = {}
+    for p in prepo_list:
+        prepo_print[p] = "_".join(p.split())
+        
+    conn = sqlite3.connect(opts.db_file)
+    cursor = conn.cursor()
+    
+    #str_normalize = lambda s: s.translate(None, " ")
+    
+    in_file_list = glob(os.path.join(opts.sentence_dir, opts.glob_str))
+    print os.path.join(opts.sentence_dir, opts.glob_str)
+    print in_file_list
+    
+    for scnt, cur_file in enumerate(in_file_list):
+        
+        tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        print "%s processing sentence file %d-of-%d: %s \n" % (tt, scnt+1, len(in_file_list), cur_file)
+        
+        #_d, curn, _e = os.path.split(cur_file)  -- errs! 
+        curn = os.path.splitext(os.path.split(cur_file)[1])[0]
+        
+        out_frame = os.path.join(out_dir, curn+".frame-feat")
+        out_bagow = os.path.join(out_dir, curn+".frame-word")
+        out_pairs = os.path.join(out_dir, curn+".frame-pair")
+        ofh = open(out_frame, "wt")
+        ofw = open(out_bagow, "wt")
+        ofp = open(out_pairs, "wt") 
+        
+        fc = open(cur_file, "r")
+        cur_fline = fc.readline().strip().split(None, 1)  # 603483869_01    By the tombstone.
+        imgid,sentid = cur_fline[0].split("_")
+        cur_sent = cur_fline[1].strip()
+        
+        # find files like 80.sent.[xx].xml
+        xml_files = glob(os.path.join(opts.semafor_output, curn + opts.sent_seg_str + "*.xml")) 
+        frame_cnt = 0
+        sents_cnt = 0
+        empty_sent_cnt = 0
+        mismatch_cnt = 0
+        for semafor_file in xml_files:  # one file of n sentences
+            soup = BeautifulSoup(open(semafor_file,'r').read())
+            sentence_list = [c for c in soup.sentences.children]
+            sentence_list = filter(lambda ss: type(ss) is bs4_element.Tag, sentence_list)
+            
+            for j, ss in enumerate(sentence_list): # foreach sentence
+                
+                #if not type(ss) is bs4_element.Tag:
+                #    print "skip #%d:\n %s \t" % (j, ss)
+                #    continue
+                ss_semafor = ss.text.strip()
+                
+                # some ad-hoc processing to convert the two sentences to the same format
+                ss_nospace = adhoc_translate ( ss_semafor.encode('ascii','ignore') )
+                cs_translated = adhoc_translate( cur_sent )
+                
+                # check that this sentence is know           
+                ind = ss_nospace.find( cs_translated )
+                
+                if ind < 0: # sentence do not match
+                    mismatch_cnt += 1
+                    print ("sentence #%d do not match:\n\t" % j) +\
+                            cur_sent + '\n\t' + ss.text.strip() + "\n"
+                elif ind > 0:
+                    mismatch_cnt += 1
+                    print ('sentence #%d err at loc %d:\n\t' % (j, ind)) + \
+                            cur_sent + '\n\t' + ss.text.strip() + "\n"
+                else: # ind == 0
+                    annot_set = ss.find_all('annotationset')
+                    if opts.DEBUG:
+                        print "s#%d:\n" % j
+                        print "\t" + cur_sent
+                        print "\t" + ss.text.strip()
+                    
+                    """
+                    [<layer id="50101" name="Target">
+                    <labels>
+                    <label end="68" id="5010101" name="Target" start="64"></label>
+                    </labels>
+                    </layer>,
+                     <layer id="50102" name="FE">
+                    <labels>
+                    <label end="68" id="5010201" name="Unit" start="64"></label>
+                    <label end="62" id="5010202" name="Count" start="58"></label>
+                    </labels>
+                    </layer>]
+                    """
+                    if not annot_set:
+                        empty_sent_cnt += 1
+                    
+                    for k, cur_a in enumerate(annot_set):
+                        framename = cur_a['framename']
+                        label_list = cur_a.find_all('label')
+                        lname  = map(lambda s: s['name'], label_list)
+                        lstart = map(lambda s: int(s['start']), label_list)
+                        lend   = map(lambda s: int(s['end'  ]), label_list)
+                        fstart = min(lstart)
+                        fend = max(lend)
+                        cur_frame = ss_semafor[fstart : fend+1]
+                        cur_frame_id = "%s_%s_%02d" % (imgid, sentid, k)
+                        
+                        tkn = nltk.word_tokenize(cur_frame)
+                        ww = map(lambda s: norm_tag(s, cursor, addl_vocab=addl_vocab,filter_stopword=1), tkn)
+                        ww = filter(lambda s: len(s)>1, ww)
+                        ww = list(set(ww)) #unique words in vocab
+                        
+                        # extract bag-of-vocab-words and bag-of-prepositions
+                        wpairs = [(" ", "")]
+                        for i, w in enumerate(tt):
+                                for j in range(i):
+                                    u = tt[j]
+                                    if len(u) and u in vocab:
+                                        if w < u:
+                                            wpairs += [(w, u)]
+                                        else:
+                                            wpairs += [(u, w)]
+                        wpairs.pop(0)
+                        
+                        cur_feat = {}
+                        for p in prepo_list:
+                            num = cur_frame.count(p)
+                            if num :
+                                cur_feat[p] = prepo_print[p]
+                                cur_frame.replace(p, "")
+                        """ write frame features to file: BoW, FE, word-pairs """
+                        wlist = map(lambda s: s+":1", cur_feat.values() + ww)
+                        ofw.write("%s %s\n" % (cur_frame_id, " ".join(wlist)) )
+                        
+                        fe_list = map(lambda s: s+":1", [framename] + lname )
+                        ofh.write("%s %s\n" % (cur_frame_id, " ".join(fe_list)) )
+                        
+                        for wp in wpairs:
+                            ofp.write("%s %s,%s\n" % (cur_frame_id, wp[0], wp[1]) )
+                        
+                        frame_cnt += 1
+
+                
+                """ end of sentence loop
+                    read newline from .sentence file 
+                """
+                sents_cnt += 1
+                cur_fline = fc.readline().strip().split(None, 1)  # 603483869_01    By the tombstone.
+                imgid,sentid = cur_fline[0].split("_")
+                cur_sent = cur_fline[1].strip()
+                
+                if sents_cnt % 500 == 0:
+                    tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+                    print "%s %d sentences, %d mismatched, %d empty, %d frames found " % \
+                        (tt, sents_cnt, mismatch_cnt, empty_sent_cnt, frame_cnt)
+                    
+                    if opts.DEBUG:
+                        return
+            
+            # finish processing an xml file
+            tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            print "%s done with xml file %s" % (tt, semafor_file)
+            print "\t\t %d sentences, %d mismatched, %d empty, %d frames found \n" % \
+                 (sents_cnt, mismatch_cnt, empty_sent_cnt, frame_cnt)
+    
+    return
+
+
+def gather_wordpair_features(argv):
+    return
+
 
 def flickr_hash_dir(imgid, meta_dir, hash_level=2, chars_per_hash=2):
     hdir = []
@@ -340,8 +595,15 @@ def flickr_hash_dir(imgid, meta_dir, hash_level=2, chars_per_hash=2):
 
 
 if __name__ == '__main__':  
-    argv = sys.argv 
-    flickr_get_txt(argv)
+    argv = sys.argv
+    if '--collect_features' in argv:
+        argv.remove('--collect_features')
+        gather_wordpair_features(argv)
+    elif '--collect_semafor' in argv:
+        argv.remove('--collect_semafor')
+        gather_semafor_features(argv)
+    else:
+        flickr_get_txt(argv)
     
     #if '--collect_tags' in argv:
     #    argv.remove('--collect_tags')

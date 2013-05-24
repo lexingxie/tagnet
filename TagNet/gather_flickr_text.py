@@ -567,8 +567,11 @@ def gather_semafor_features(argv):
                 """
                 sents_cnt += 1
                 cur_fline = fc.readline().strip().split(None, 1)  # 603483869_01    By the tombstone.
-                imgid,sentid = cur_fline[0].split("_")
-                cur_sent = cur_fline[1].strip()
+                if cur_fline:
+                    imgid,sentid = cur_fline[0].split("_")
+                    cur_sent = cur_fline[1].strip()
+                else:
+                    break
                 
                 if sents_cnt % 500 == 0:
                     tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')

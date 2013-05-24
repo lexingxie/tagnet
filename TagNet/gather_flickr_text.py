@@ -529,19 +529,8 @@ def gather_semafor_features(argv):
                         tkn = nltk.word_tokenize(cur_frame)
                         ww = map(lambda s: norm_tag(s, cursor, addl_vocab=addl_vocab,filter_stopword=1), tkn)
                         ww = filter(lambda s: len(s)>1, ww)
-                        ww = list(set(ww)) #unique words in vocab
+                        ww = list(set(ww)) #unique words in vocab                       
                         
-                        # extract bag-of-vocab-words and bag-of-prepositions
-                        wpairs = [(" ", "")]
-                        for i, w in enumerate(tt):
-                                for j in range(i):
-                                    u = tt[j]
-                                    if len(u) and u in vocab:
-                                        if w < u:
-                                            wpairs += [(w, u)]
-                                        else:
-                                            wpairs += [(u, w)]
-                        wpairs.pop(0)
                         
                         cur_feat = {}
                         for p in prepo_list:
@@ -556,8 +545,24 @@ def gather_semafor_features(argv):
                         fe_list = map(lambda s: s+":1", [framename] + lname )
                         ofh.write("%s %s\n" % (cur_frame_id, " ".join(fe_list)) )
                         
-                        for wp in wpairs:
-                            ofp.write("%s %s,%s\n" % (cur_frame_id, wp[0], wp[1]) )
+                        if len(ww) >= 2:
+                            # extract bag-of-vocab-words and bag-of-prepositions
+                            wpairs = [(" ", "")]
+                            for i, w in enumerate(ww):
+                                    for j in range(i):
+                                        u = ww[j]
+                                        if len(u) and u in vocab:
+                                            if w < u:
+                                                wpairs += [(w, u)]
+                                            else:
+                                                wpairs += [(u, w)]
+                            wpairs.pop(0)
+                            
+                            for wp in wpairs:
+                                ofp.write("%s %s,%s\n" % (cur_frame_id, wp[0], wp[1]) )
+                            
+                        else: # empty, no word-pairs
+                            ofp.write("%s  \n" % cur_frame_id )
                         
                         frame_cnt += 1
 
@@ -587,6 +592,10 @@ def gather_semafor_features(argv):
             print "\t\t %d sentences, %d mismatched, %d empty, %d frames found \n" % \
                  (sents_cnt, mismatch_cnt, empty_sent_cnt, frame_cnt)
     
+        ofh.close()
+        ofw.close()
+        ofp.close()
+        
     return
 
 

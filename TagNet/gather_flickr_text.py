@@ -565,7 +565,7 @@ def gather_semafor_features(argv):
                             ofp.write("%s  \n" % cur_frame_id )
                         
                         frame_cnt += 1
-
+                        
                 
                 """ end of sentence loop
                     read newline from .sentence file 

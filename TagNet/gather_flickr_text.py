@@ -338,6 +338,7 @@ def adhoc_translate(in_ascii_str):
     ss_nospace = ss_nospace.replace("-LSB-", "[").replace("-RSB-", "]")  
     ss_nospace = ss_nospace.replace("-LCB-", "{").replace("-RCB-", "}")  
     ss_nospace = ss_nospace.replace("``", '"').replace("''", '"') # quotes
+    ss_nospace = ss_nospace.translate(None, string.punctuation)
     return ss_nospace
 
 
@@ -445,7 +446,7 @@ def gather_semafor_features(argv):
         out_pairs = os.path.join(out_dir, curn+".frame-pair")
         ofh = open(out_frame, "wt")
         ofw = open(out_bagow, "wt")
-        ofp = open(out_pairs, "wt") 
+        ofp = open(out_pairs, "wt")
         
         fc = open(cur_file, "r")
         cur_fline = fc.readline().strip().split(None, 1)  # 603483869_01    By the tombstone.

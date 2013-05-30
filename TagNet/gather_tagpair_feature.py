@@ -13,6 +13,12 @@ from collections import Counter
 
 #import itertools
 import pickle
+#import numpy as np
+import pylab
+#import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.colors import LinearSegmentedColormap
+from scipy.io import savemat
 
 #from operator import itemgetter
 
@@ -77,7 +83,7 @@ def tagpair_get_frame(argv):
     if len(argv)<2:
         argv = ['-h']
     
-    parser = OptionParser(description='parse flickr json files')
+    parser = OptionParser(description='parse word and frame features')
     parser.add_option("-i", "--input_dir", dest="input_dir", 
         default='', help="input dir containing sentence files")
     parser.add_option("-o", "--out_dir", dest="out_dir", 
@@ -146,7 +152,6 @@ def tagpair_get_frame(argv):
     nump = 50
     numf = 6
     for wp, pcnt in wpair_cnt.most_common( nump ):
-        
         flist = map(lambda t: " %s:%d" % (t[0], t[1]), wpair_dict[wp].most_common( numf ) )
         flist.sort()
         print "%s, # %d: %s" % ( str(wp), pcnt, " ".join( flist ) )
@@ -156,9 +161,122 @@ def tagpair_get_frame(argv):
 def tagpair_get_sentence(argv):
     return
 
+def aggregate_rel_features(argv):
+    if len(argv)<2:
+        argv = ['-h']
+    
+    parser = OptionParser(description='parse flickr json files')
+    parser.add_option("-i", "--input_pickle", dest="input_pickle", 
+        default='', help="input pickle file containing bigram features")
+    parser.add_option("-r", "--relation_file", dest="relation_file", 
+        default='', help="input pickle file for conceptnet relations")
+    
+    parser.add_option('-D', '--DEBUG', dest="DEBUG", type='int', default=0)
+    opts, __ = parser.parse_args(argv)
+    
+    wpair_dict = pickle.load( open(opts.input_pickle, 'rb') )
+    tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+    print "%s load %d bigram features from %s" % (tt, len(wpair_dict), opts.input_pickle)
+                
+    rel_dict = {}
+    rel_cnt = {}
+    
+    cnt_line = 0
+    cnt_notfound = 0
+    
+    with open(opts.relation_file) as fh:
+        for curline in fh:
+            tmp = curline.strip().split(",")
+            rel = tmp[0]
+            if rel not in rel_dict:
+                rel_dict[rel] = Counter()
+                rel_cnt[rel] = 0
+            
+            w1 = min(tmp[1:])
+            w2 = max(tmp[1:])
+            if (w1, w2) in wpair_dict:
+                rel_dict[rel].update(wpair_dict[(w1, w2)])
+                rel_cnt[rel] += 1
+            else:
+                cnt_notfound += 1
+            cnt_line += 1
+            
+            if cnt_line % 10000 == 0:
+                tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+                print "%s load %d lines, %d not found" % (tt, cnt_line, cnt_notfound)
+    
+    nump = 25
+    #numf = 6
+    wfrq = Counter()
+    for r in rel_dict.iterkeys():
+        cur_cntr = dict( map(lambda t: (t[0], 1.*t[1]/rel_cnt[r]) , rel_dict[r].most_common( nump ) ) )
+        #print "%s - %d \t" % (r, rel_cnt[r]),
+        #print " ".join( cur_cntr )
+        
+        wfrq.update( cur_cntr )
+    
+    wdim = sorted(wfrq, key=wfrq.__getitem__, reverse=True)
+    rdim = rel_dict.keys()
+    mat = pylab.rand(len(rel_dict), len(wdim))
+    for ir, r in enumerate(rdim):
+        for iw, w in enumerate(wdim):
+            mat[ir, iw] = float( 1.*rel_dict[r][w]/rel_cnt[r] )
+    
+    # save the output
+    out_mat = os.path.splitext(opts.input_pickle)[0] + ".mat"
+    savemat(out_mat, {"rdim":rdim, "wdim":wdim, 'm':mat})
+    
+    """
+        # now draw this
+        fig = pylab.figure()
+        ax = fig.add_subplot(111)
+        
+        ax.imshow(pylab.log10(mat + 1), cmap=cm.jet, interpolation='nearest') #, vmin=clevs[0],vmax=clevs[-1]) )
+        #ax.colorbar()
+        pylab.show()
+    """
+    return
+
+def cmap_map(function,cmap):
+    """ Applies function (which should operate on vectors of shape 3:
+        [r, g, b], on colormap cmap. This routine will break any discontinuous     points in a colormap.
+    """
+    
+    cdict = cmap._segmentdata
+    #step_dict = {}
+    step_dict = dict.fromkeys(('red','green', 'blue'))
+    # Firt get the list of points where the segments start or end
+    for key in ('red','green', 'blue'):         
+        step_dict[key] = map(lambda x: x[0], cdict[key])
+    
+    step_list = sum(step_dict.values(), [])
+    step_list = pylab.array(list(set(step_list)))
+    # Then compute the LUT, and apply the function to the LUT
+    reduced_cmap = lambda step : pylab.array(cmap(step)[0:3])
+    old_LUT = pylab.array(map( reduced_cmap, step_list))
+    new_LUT = pylab.array(map( function, old_LUT))
+    # Now try to make a minimal segment definition of the new LUT
+    cdict = {}
+    for i,key in enumerate(('red','green','blue')):
+        this_cdict = {}
+        for j,step in enumerate(step_list):
+            if step in step_dict[key]:
+                this_cdict[step] = new_LUT[j,i]
+            elif new_LUT[j,i]!=old_LUT[j,i]:
+                this_cdict[step] = new_LUT[j,i]
+        colorvector=  map(lambda x: x + (x[1], ), this_cdict.items())
+        colorvector.sort()
+        cdict[key] = colorvector
+
+    return LinearSegmentedColormap('colormap',cdict,1024)
+  
 if __name__ == '__main__':  
     argv = sys.argv
-    if '--tagpair_get_sentence' in argv:
+    if "--aggregate_rel_features" in argv:
+        argv.remove('--aggregate_rel_features')
+        aggregate_rel_features(argv)
+        
+    elif '--tagpair_get_sentence' in argv:
         argv.remove('--tagpair_get_sentence')
         tagpair_get_sentence(argv)
     else:

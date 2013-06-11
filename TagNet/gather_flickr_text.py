@@ -393,6 +393,7 @@ def gather_semafor_features(argv):
     parser.add_option('-v', '--vocab', dest="vocab", default="")
     parser.add_option('-a', '--addl_vocab', dest="addl_vocab", default="")
     parser.add_option('-p', '--preposition_list', dest="preposition_list", default="")
+    parser.add_option('-C', '--CHECK_XML_NUMBERING', dest="CHECK_XML_NUMBERING", type='int', default=0)
     parser.add_option('-D', '--DEBUG', dest="DEBUG", type='int', default=0)
     
     opts, __ = parser.parse_args(argv)
@@ -455,8 +456,15 @@ def gather_semafor_features(argv):
         
         # find files like 80.sent.[xx].xml
         xml_files = glob(os.path.join(opts.semafor_output, curn + opts.sent_seg_str + "*.xml"))
-        xml_files.sort() 
+        xml_files.sort()
         print xml_files
+        if opts.CHECK_XML_NUMBERING:
+            xml_num = map(lambda s: os.path.split(s)[1].split("."), xml_files)
+            xml_num = map(lambda t: t[opts.CHECK_XML_NUMBERING])
+            xml_num = map(int, xml_num)
+            if not xml_num == range(len(xml_num)):
+                print "xml numbering mismatch!! \n\t %d files, largest file sequence %d" % (len(xml_num), xml_num[-1])
+                continue
         
         frame_cnt = 0
         sents_cnt = 0
@@ -579,9 +587,9 @@ def gather_semafor_features(argv):
                 else:
                     break
                 
-                if sents_cnt % 500 == 0:
+                if sents_cnt % 1000 == 0:
                     tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-                    print "%s %d sentences, %d mismatched, %d empty, %d frames found " % \
+                    print "%s %7d sentences, %d mismatched, %d empty, %d frames found " % \
                         (tt, sents_cnt, mismatch_cnt, empty_sent_cnt, frame_cnt)
                     
                     if opts.DEBUG:

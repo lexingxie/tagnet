@@ -460,11 +460,13 @@ def gather_semafor_features(argv):
         print xml_files
         if opts.CHECK_XML_NUMBERING:
             xml_num = map(lambda s: os.path.split(s)[1].split("."), xml_files)
-            xml_num = map(lambda t: t[opts.CHECK_XML_NUMBERING])
+            xml_num = map(lambda t: t[opts.CHECK_XML_NUMBERING], xml_num)
             xml_num = map(int, xml_num)
             if not xml_num == range(len(xml_num)):
-                print "xml numbering mismatch!! \n\t %d files, largest file sequence %d" % (len(xml_num), xml_num[-1])
+                print "\nxml numbering mismatch!! \n\t %d files, should be %d from file sequence" % (len(xml_num), xml_num[-1]+1)
                 continue
+            else:
+                print "\nxml numbering consistent, %d files" % len(xml_num)
         
         frame_cnt = 0
         sents_cnt = 0
@@ -587,7 +589,7 @@ def gather_semafor_features(argv):
                 else:
                     break
                 
-                if sents_cnt % 1000 == 0:
+                if sents_cnt % 2000 == 0:
                     tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
                     print "%s %7d sentences, %d mismatched, %d empty, %d frames found " % \
                         (tt, sents_cnt, mismatch_cnt, empty_sent_cnt, frame_cnt)

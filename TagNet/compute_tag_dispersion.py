@@ -121,7 +121,7 @@ def compute_dispersion(argv):
         stmt = "SELECT wnid, count FROM wn_tag WHERE tag='%s'" % tag
         tag_assoc = cursor.execute(stmt).fetchall()
         tag_assoc.sort(key=lambda x: x[1], reverse=True)
-        if opts.topK > 0 and opts.topK > len(tag_assoc) :
+        if opts.topK > 0 and opts.topK<len(tag_assoc) :
             tag_assoc = tag_assoc[:opts.topK]
         
         tmp = zip(*tag_assoc) 

@@ -24,9 +24,10 @@ def get_wn_similarity(sim, wn_list, offset_dict):
         else:
             k1 = offset_dict[wn_list[j]]
             k2 = offset_dict[wn_list[i]]
-         
-        if k1 in sim and k2 in sim[k1]:
-            s = sim[k1][k2]
+        
+        ks = k1+","+k2
+        if ks in sim:
+            s = sim[ks]#[k1][k2]
             cache_cnt += 1
         else:
             try:
@@ -36,11 +37,9 @@ def get_wn_similarity(sim, wn_list, offset_dict):
                 print wn_list[i], wn_list[j]
                 print k1, k2
             s = w1.path_similarity(w2)
-            if k1 not in sim:
-                sim[k1] = {}
-            sim[k1][k2] = s
+            sim[ks] = s
             new_cnt += 1
-        
+        #print "%s "
         wn_sim.append(s)
     
     if PRINT_FLAG:
@@ -123,6 +122,9 @@ def compute_dispersion(argv):
         stmt = "SELECT wnid, count FROM wn_tag WHERE tag='%s'" % tag
         tag_assoc = cursor.execute(stmt).fetchall()
         tag_assoc.sort(key=lambda x: x[1], reverse=True)
+        
+        numwn = len(tag_assoc)
+        
         if opts.topK > 0 and opts.topK<len(tag_assoc) :
             tag_assoc = tag_assoc[:opts.topK]
         
@@ -130,9 +132,8 @@ def compute_dispersion(argv):
         wn_list = tmp[0]
         wn_count = tmp[1]
         
-        PRINT_FLAG = (cnt % 10 == 0)
+        #PRINT_FLAG = (cnt % 10 == 0)
         
-        numwn = len(wn_list)
         idx_list = gen_pairs_idx(len(wn_list))
         
         if idx_list:
@@ -150,7 +151,7 @@ def compute_dispersion(argv):
         else:
             if PRINT_FLAG:
                 tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-                print "%s tag#%d/%d %s, empty" % (tt, cnt, nt, tag)
+                print "%s tag#%d/%d %s,%d,%0.4f\n" % (tt, cnt, nt, tag, numwn, 0.)
             fo.write("%s,%d,%0.4f\n" % (tag, numwn, 0.) )
     
     sim.close()

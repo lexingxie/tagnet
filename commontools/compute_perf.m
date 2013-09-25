@@ -5,6 +5,11 @@ function perf = compute_perf(scores, labels, varargin)
 % compute an assortment of performance metrics 
 % precision, recall, equal-precision-recall, average precision
 %
+% example use:
+% perf = compute_perf(score, label, 'store_raw_pr', 2, 'precision_depth', 10);
+%% score N samples x M approaches
+%% label N samples x 1 array, assume 0 or 1, can be changed in ('pos_label', 1, 'neg_label', 0)
+%
 % 2004-12-13, xlx
 % 2006-04-11, revised for all flavors of metrics
 

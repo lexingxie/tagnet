@@ -663,7 +663,55 @@ def ingest_tag_struct(argv):
     conn.close()
     
     return
+
+
+
+def filter_tag_db(argv):
+    if len(argv)<2:
+        argv = ['-h']
+    parser = OptionParser(description='construct+compare conceptnet and flickr word similarities')
+    parser.add_option('-d', '--db_dir', dest='db_dir', default="", help='dir containing sqlite db files')
+    parser.add_option("", '--db_tag', dest='db_tag', default="taginfo_v3.db", help='tag freq db')
+    parser.add_option("", '--db_wn', dest='db_wn', default="wordnet_tag.db", help='wordnet-tag cooc freq db')
     
+    (opts, __args) = parser.parse_args(sys.argv)
+
+    db_wn = os.path.join(opts.db_dir, opts.db_wn)
+    conn_wn = sqlite3.connect(db_wn)
+    csr_wn = conn_wn.cursor()
+    tlist =  csr_wn.execute("SELECT DISTINCT tag FROM wn_tag").fetchall()
+    tlist = map(lambda t: t[0], tlist)
+
+    conn_wn.close()
+    
+    db_tag = os.path.join(opts.db_dir, opts.db_tag)
+    conn_tag = sqlite3.connect(db_tag)
+    csr_tag = conn_tag.cursor()
+    
+    tag_kept = 0
+    tag_rmvd = 0
+    rm_list = []
+    for row in csr_tag.execute("SELECT tag FROM tag_score"):
+        cur_tag = row[0]
+        if cur_tag in tlist:
+            tag_kept += 1
+        else:
+            tag_rmvd += 1
+            rm_list.append(cur_tag)
+
+    tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')    
+    print "%s keeping %d tags, deleting %d" % (tt, tag_kept, tag_rmvd)
+
+    for rtag in rm_list:
+        csr_tag.execute("DELETE FROM tag_score WHERE tag=?", (rtag,) )
+    conn_tag.commit()
+
+    tt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')    
+    print "%s, done." % tt
+    conn_tag.close()
+
+
+
 if __name__ == '__main__':
     argv = sys.argv 
     if '--make_vocab' in argv:
@@ -684,5 +732,8 @@ if __name__ == '__main__':
     elif '--ingest_tag_struct' in argv:
         argv.remove('--ingest_tag_struct')
         ingest_tag_struct(argv)
+    elif '--filter_tag_db' in argv:
+        argv.remove('--filter_tag_db')
+        filter_tag_db(argv)
     else:
         pass        
